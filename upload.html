@@ -146,11 +146,53 @@
   .status.error { color: #e68e2c; }
 
   .hidden { display: none; }
+
+  .gate {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 3rem;
+  }
+  .gate input {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 0.9rem 1.2rem;
+    color: #fdfcf5;
+    font-family: 'Nunito', sans-serif;
+    font-size: 1rem;
+    outline: none;
+    text-align: center;
+    width: 200px;
+    letter-spacing: 0.05em;
+  }
+  .gate input::placeholder { color: rgba(255,255,255,0.25); }
+  .gate input:focus { border-color: #8db63a; }
+  .gate .hint {
+    font-size: 0.75rem;
+    opacity: 0.3;
+  }
+  .gate .wrong {
+    color: #e68e2c;
+    font-size: 0.8rem;
+    min-height: 1.2rem;
+  }
 </style>
 </head>
 <body>
 
 <h1>Moore Gardens<span>!</span> Upload</h1>
+
+<!-- Gate -->
+<div class="gate" id="gate">
+  <div class="hint">password</div>
+  <input type="password" id="pinInput" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" autofocus>
+  <div class="wrong" id="wrongMsg"></div>
+</div>
+
+<!-- Upload (hidden until authenticated) -->
+<div id="uploadArea" class="hidden">
 
 <div class="pick-btn" id="pickBtn">
   <input type="file" accept="image/*" multiple id="photoInput">
@@ -162,7 +204,22 @@
 <button class="upload-btn hidden" id="uploadBtn" disabled>upload all</button>
 <div class="status" id="status"></div>
 
+</div>
+
 <script>
+  // Gate
+  document.getElementById('pinInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      if (e.target.value === 'sweet') {
+        document.getElementById('gate').classList.add('hidden');
+        document.getElementById('uploadArea').classList.remove('hidden');
+      } else {
+        document.getElementById('wrongMsg').textContent = 'nope';
+        e.target.value = '';
+      }
+    }
+  });
+
   const SUPABASE_URL = 'https://wcrcccrgaiesafmmzqgx.supabase.co';
   const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjcmNjY3JnYWllc2FmbW16cWd4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDQ3OTUxMSwiZXhwIjoyMDkwMDU1NTExfQ.RuXKqDdspupi2tHSsEuJgYWTS4oUcgG2w36wS3Hg8to';
   const TAG_OPTIONS = ['seedlings','propagation','setup','harvest','pollinators','garden life','bloom','soil'];
