@@ -15,8 +15,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 2rem;
+    padding: 2rem 2rem 4rem;
   }
   h1 {
     font-size: 1.4rem;
@@ -64,7 +63,7 @@
   .photo-pick.has-photo .label { display: none; }
   .photo-pick.has-photo img { display: block; margin: 0 auto; }
 
-  input[type="text"] {
+  input[type="text"], textarea {
     background: rgba(255,255,255,0.1);
     border: 1px solid rgba(255,255,255,0.15);
     border-radius: 10px;
@@ -75,8 +74,41 @@
     outline: none;
     transition: border-color 0.2s;
   }
-  input[type="text"]::placeholder { color: rgba(255,255,255,0.3); }
-  input[type="text"]:focus { border-color: #8db63a; }
+  input[type="text"]::placeholder, textarea::placeholder { color: rgba(255,255,255,0.3); }
+  input[type="text"]:focus, textarea:focus { border-color: #8db63a; }
+  textarea { resize: none; height: 70px; }
+
+  .field-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.4;
+    margin-bottom: -0.5rem;
+  }
+
+  .tags-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .tag-chip {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 100px;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .tag-chip:hover { border-color: rgba(255,255,255,0.3); }
+  .tag-chip.selected {
+    background: #8db63a;
+    border-color: #8db63a;
+    color: white;
+  }
 
   button {
     background: #e68e2c;
@@ -89,12 +121,10 @@
     font-weight: 700;
     cursor: pointer;
     transition: opacity 0.2s;
+    margin-top: 0.5rem;
   }
   button:hover { opacity: 0.9; }
-  button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
 
   .status {
     text-align: center;
@@ -117,7 +147,26 @@
     <img id="photoPreview" alt="">
   </div>
 
-  <input type="text" id="titleInput" placeholder="quick title...">
+  <div class="field-label">title</div>
+  <input type="text" id="titleInput" placeholder="what are we looking at?">
+
+  <div class="field-label">tags</div>
+  <div class="tags-wrap" id="tagsWrap">
+    <div class="tag-chip" data-tag="seedlings">seedlings</div>
+    <div class="tag-chip" data-tag="propagation">propagation</div>
+    <div class="tag-chip" data-tag="setup">setup</div>
+    <div class="tag-chip" data-tag="harvest">harvest</div>
+    <div class="tag-chip" data-tag="pollinators">pollinators</div>
+    <div class="tag-chip" data-tag="garden life">garden life</div>
+    <div class="tag-chip" data-tag="bloom">bloom</div>
+    <div class="tag-chip" data-tag="soil">soil</div>
+  </div>
+
+  <div class="field-label">plant</div>
+  <input type="text" id="plantInput" placeholder="e.g. Wild Bergamot">
+
+  <div class="field-label">thought</div>
+  <textarea id="thoughtInput" placeholder="anything to note?"></textarea>
 
   <button id="uploadBtn" disabled>upload</button>
 
@@ -132,22 +181,40 @@
   const photoPick = document.getElementById('photoPick');
   const photoPreview = document.getElementById('photoPreview');
   const titleInput = document.getElementById('titleInput');
+  const plantInput = document.getElementById('plantInput');
+  const thoughtInput = document.getElementById('thoughtInput');
   const uploadBtn = document.getElementById('uploadBtn');
   const status = document.getElementById('status');
 
   let selectedFile = null;
+  let selectedTags = [];
 
   photoInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
     selectedFile = file;
-    const url = URL.createObjectURL(file);
-    photoPreview.src = url;
+    photoPreview.src = URL.createObjectURL(file);
     photoPick.classList.add('has-photo');
-    uploadBtn.disabled = false;
+    checkReady();
   });
 
-  // Resize image on client before upload
+  document.getElementById('tagsWrap').addEventListener('click', (e) => {
+    const chip = e.target.closest('.tag-chip');
+    if (!chip) return;
+    chip.classList.toggle('selected');
+    const tag = chip.dataset.tag;
+    if (selectedTags.includes(tag)) {
+      selectedTags = selectedTags.filter(t => t !== tag);
+    } else {
+      selectedTags.push(tag);
+    }
+  });
+
+  titleInput.addEventListener('input', checkReady);
+  function checkReady() {
+    uploadBtn.disabled = !(selectedFile && titleInput.value.trim());
+  }
+
   function resizeImage(file, maxWidth) {
     return new Promise((resolve) => {
       const img = new Image();
@@ -156,8 +223,7 @@
         const canvas = document.createElement('canvas');
         canvas.width = img.width * scale;
         canvas.height = img.height * scale;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
         canvas.toBlob(resolve, 'image/jpeg', 0.75);
       };
       img.src = URL.createObjectURL(file);
@@ -165,19 +231,20 @@
   }
 
   uploadBtn.addEventListener('click', async () => {
-    if (!selectedFile) return;
+    if (!selectedFile || !titleInput.value.trim()) return;
 
-    const title = titleInput.value.trim() || 'Untitled';
+    const title = titleInput.value.trim();
+    const plant = plantInput.value.trim() || null;
+    const thought = thoughtInput.value.trim() || null;
+
     uploadBtn.disabled = true;
     status.textContent = 'resizing...';
     status.className = 'status';
 
     try {
-      // Resize
       const resized = await resizeImage(selectedFile, 1200);
       const filename = `${Date.now()}.jpg`;
 
-      // Upload to storage
       status.textContent = 'uploading photo...';
       const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/photos/${filename}`, {
         method: 'POST',
@@ -187,12 +254,15 @@
         },
         body: resized,
       });
-
       if (!uploadRes.ok) throw new Error('Photo upload failed');
 
-      // Insert gallery row
       status.textContent = 'saving...';
       const photoUrl = `${SUPABASE_URL}/storage/v1/object/public/photos/${filename}`;
+
+      const row = { title, photo_url: photoUrl };
+      if (selectedTags.length > 0) row.tags = selectedTags;
+      if (thought) row.thought_note = thought;
+
       const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/gallery`, {
         method: 'POST',
         headers: {
@@ -200,27 +270,29 @@
           'Authorization': `Bearer ${SERVICE_KEY}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ title, photo_url: photoUrl }),
+        body: JSON.stringify(row),
       });
-
       if (!insertRes.ok) throw new Error('Database save failed');
 
       status.textContent = 'live on mooregardens.farm!';
       status.className = 'status success';
 
-      // Reset form
       selectedFile = null;
+      selectedTags = [];
       photoPreview.src = '';
       photoPick.classList.remove('has-photo');
       titleInput.value = '';
+      plantInput.value = '';
+      thoughtInput.value = '';
       photoInput.value = '';
+      document.querySelectorAll('.tag-chip.selected').forEach(c => c.classList.remove('selected'));
+      uploadBtn.disabled = true;
 
     } catch (err) {
       status.textContent = err.message;
       status.className = 'status error';
+      uploadBtn.disabled = false;
     }
-
-    uploadBtn.disabled = false;
   });
 </script>
 </body>
