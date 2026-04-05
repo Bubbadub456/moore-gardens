@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 Garden Plan — Moore Gardens!</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800;900&display=swap');
+
+  :root {
+    --dark-green: #144223;
+    --orange: #e68e2c;
+    --leaf-green: #8db63a;
+    --cream: #fdfcf5;
+    --warm-gray: #f2f0ea;
+    --text-light: #5a7a5a;
+    --white: #ffffff;
+    --char: #2a2a2a;
+
+    --st-priority-bg: #f5e6c8;
+    --st-priority-border: #e68e2c;
+    --st-garlic-bg: #e8dfc8;
+    --st-garlic-border: #b8a870;
+    --st-cover-bg: #c8ddb8;
+    --st-cover-border: #8db63a;
+    --st-herb-bg: #b8d4b0;
+    --st-herb-border: #144223;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--cream);
+    color: var(--char);
+    min-height: 100vh;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--dark-green);
+    padding: 16px 14px 12px;
+  }
+  .header svg { height: 20px; width: auto; display: block; }
+  .header-sub {
+    font-size: 10px; font-weight: 700; color: var(--leaf-green);
+    letter-spacing: 0.1em; text-transform: uppercase; margin-top: 6px; opacity: 0.75;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex; background: var(--white);
+    border-bottom: 1px solid rgba(20,66,35,0.08);
+  }
+  .tab {
+    flex: 1; padding: 10px; border: none; cursor: pointer;
+    font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 600;
+    color: var(--text-light); background: var(--white);
+    border-bottom: 3px solid transparent; transition: all 0.15s;
+  }
+  .tab.active {
+    font-weight: 800; color: var(--dark-green);
+    background: var(--cream); border-bottom-color: var(--orange);
+  }
+
+  /* ── MAP VIEW ── */
+  .map-view { padding: 10px 8px; }
+  .compass {
+    display: flex; justify-content: space-between;
+    font-size: 9px; color: var(--text-light); font-weight: 700;
+    margin-bottom: 5px; padding: 0 4px;
+  }
+  .grid-wrap {
+    background: var(--warm-gray); border-radius: 10px;
+    padding: 8px; border: 1px solid rgba(20,66,35,0.06);
+  }
+  .grid-row {
+    display: flex; justify-content: center;
+  }
+  .section-gap { height: 0; }
+
+  /* ── BED CELLS ── */
+  .bed {
+    border-radius: 5px; padding: 4px; cursor: pointer;
+    font-family: 'Nunito', sans-serif; text-align: center;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    gap: 2px; transition: all 0.15s; border-width: 2px; border-style: solid;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08); flex-shrink: 0;
+  }
+  .bed:active { transform: scale(1.03); }
+  .bed.selected { transform: scale(1.03); }
+  .bed-plan {
+    font-weight: 800; color: var(--dark-green);
+    line-height: 1.25; white-space: pre-line;
+  }
+  .bed.selected .bed-plan { color: var(--cream); }
+  .bed-label {
+    font-weight: 700; color: var(--text-light); letter-spacing: 0.03em;
+  }
+  .bed.selected .bed-label { color: rgba(253,252,245,0.7); }
+
+  /* status colors */
+  .bed.priority { background: var(--st-priority-bg); border-color: var(--st-priority-border); }
+  .bed.priority.selected { background: var(--st-priority-border); }
+  .bed.garlic { background: var(--st-garlic-bg); border-color: var(--st-garlic-border); }
+  .bed.garlic.selected { background: var(--st-garlic-border); }
+  .bed.cover { background: var(--st-cover-bg); border-color: var(--st-cover-border); }
+  .bed.cover.selected { background: var(--st-cover-border); }
+  .bed.herb { background: var(--st-herb-bg); border-color: var(--st-herb-border); }
+  .bed.herb.selected { background: var(--st-herb-border); }
+
+  /* ── LEGEND ── */
+  .legend { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .legend-item {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 9px; font-weight: 700; color: var(--dark-green);
+    background: var(--white); border-radius: 4px; padding: 3px 6px;
+  }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+  /* ── DETAIL PANEL ── */
+  .detail {
+    background: var(--white); border-radius: 10px; padding: 14px;
+    margin-top: 10px; border-width: 2px; border-style: solid;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .detail-name { font-size: 14px; font-weight: 900; color: var(--dark-green); }
+  .detail-badge {
+    font-size: 9px; font-weight: 700; border-radius: 4px; padding: 2px 6px;
+    border-width: 1px; border-style: solid;
+  }
+  .detail-plan { font-size: 14px; font-weight: 700; color: var(--char); white-space: pre-line; line-height: 1.4; margin-bottom: 2px; }
+  .detail-sub { font-size: 11px; color: var(--text-light); margin-bottom: 6px; }
+  .detail-row { font-size: 12px; margin-bottom: 3px; }
+  .detail-row .when { font-weight: 800; color: var(--orange); margin-right: 6px; }
+  .detail-row .tip { font-weight: 800; color: var(--leaf-green); margin-right: 6px; }
+  .detail-row.tip-row { color: var(--text-light); }
+  .detail-hint { text-align: center; padding: 8px; color: var(--text-light); font-size: 11px; font-style: italic; }
+
+  /* ── INDOOR STARTS ── */
+  .starts-wrap {
+    background: var(--white); border-radius: 10px; padding: 12px;
+    margin-top: 12px; border: 1px solid rgba(20,66,35,0.07);
+  }
+  .starts-title { font-size: 12px; font-weight: 900; color: var(--dark-green); margin-bottom: 8px; }
+  .start-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 0; border-bottom: 1px solid rgba(20,66,35,0.03);
+  }
+  .start-row:last-child { border-bottom: none; }
+  .start-name { font-size: 12px; font-weight: 700; color: var(--char); }
+  .start-timing { font-size: 9px; color: var(--text-light); }
+  .start-badge {
+    font-size: 8px; font-weight: 800; text-transform: uppercase;
+    padding: 2px 6px; border-radius: 3px;
+  }
+  .start-badge.done { background: rgba(141,182,58,0.13); color: var(--dark-green); }
+  .start-badge.now { background: rgba(230,142,44,0.13); color: var(--orange); }
+  .start-badge.soon { background: rgba(20,66,35,0.04); color: var(--text-light); }
+  .start-badge.opt { background: rgba(20,66,35,0.03); color: var(--text-light); }
+
+  /* ── CALENDAR VIEW ── */
+  .cal-view { padding: 12px; }
+  .cal-intro { font-size: 11px; color: var(--text-light); margin-bottom: 12px; line-height: 1.5; font-weight: 600; }
+  .cal-week { margin-bottom: 14px; }
+  .cal-badge {
+    display: inline-block; font-size: 10px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--white); padding: 3px 9px; border-radius: 4px; margin-bottom: 5px;
+  }
+  .cal-badge.now { background: var(--orange); }
+  .cal-badge.spring { background: var(--leaf-green); }
+  .cal-badge.summer { background: var(--dark-green); }
+  .cal-task {
+    display: flex; gap: 7px; padding: 7px 9px; margin-top: 3px;
+    background: var(--white); border-radius: 5px; border-left: 3px solid;
+  }
+  .cal-task.high { border-left-color: var(--orange); }
+  .cal-task.med { border-left-color: var(--dark-green); }
+  .cal-task.low { border-left-color: var(--leaf-green); }
+  .cal-bed {
+    font-size: 8px; font-weight: 800; color: var(--dark-green);
+    white-space: nowrap; background: rgba(20,66,35,0.05);
+    padding: 2px 4px; border-radius: 3px; align-self: flex-start; margin-top: 1px;
+  }
+  .cal-action { font-size: 11px; color: var(--char); line-height: 1.4; font-weight: 600; }
+
+  /* ── SURVIVAL TIPS ── */
+  .tips {
+    background: var(--dark-green); border-radius: 10px; padding: 14px;
+    margin-top: 6px; color: var(--cream);
+  }
+  .tips-title { font-size: 12px; font-weight: 900; margin-bottom: 8px; }
+  .tips-item { font-size: 11px; line-height: 1.5; margin-bottom: 5px; }
+  .tips-item:last-child { margin-bottom: 0; }
+  .tips-item strong { color: var(--orange); }
+
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <svg viewBox="0 0 705 161" xmlns="http://www.w3.org/2000/svg">
+    <path fill="#fdfcf5" d="M36.9 86.26c0-.18.23-.25.33-.1 3.2 4.62 5.97 8.9 8.3 12.83 1.83 3.09 3.92 6.53 7.56 6.89 2.85.28 5.01-.87 6.5-3.45 2.43-4.19 5.81-9.61 10.15-16.26.11-.16.36-.09.36.11-.15 6.71-.23 16.37-.22 28.97.01 3.15 1.56 4.86 4.67 5.11 3.79.31 8.01.2 7.98-4.11-.18-25.22-.19-41.46-.03-48.73.12-5.54-3.44-5.76-7.8-5.63-4.3.13-4.75 3.62-6.59 6.41-4.53 6.88-6.88 10.4-10.01 15.82-1.34 2.32-2.68 4.36-4.03 6.12-.17.21-.49.2-.64-.03-3.83-5.95-9.28-14.63-16.37-26.06-.94-1.53-2.53-2.27-4.76-2.23-3.51.05-7.69.17-7.68 4.17.03 10.49-.02 25.76-.16 45.8-.03 4.17-.64 7.89 4.07 8.5 3.41.44 8.41.28 8.46-3.76.13-11.83.1-21.95-.09-30.37z"/>
+    <path fill="#fdfcf5" d="M111.46 76.01c12.28.24 22.05 10.53 21.81 22.99-.24 12.45-10.39 22.36-22.67 22.13-12.28-.24-22.05-10.53-21.8-23 .24-12.45 10.39-22.36 22.66-22.12zm-.54 11.06c-5.59-.02-10.15 5.13-10.17 11.49-.02 6.37 4.5 11.55 10.09 11.57 5.59.02 10.15-5.13 10.17-11.49.02-6.37-4.5-11.55-10.09-11.57z"/>
+    <path fill="#fdfcf5" d="M159.71 76.01c12.25.67 21.63 11.31 20.96 23.78-.68 12.47-11.15 22.04-23.4 21.38-12.25-.67-21.63-11.31-20.96-23.78.68-12.47 11.15-22.04 23.4-21.38zm-1.54 11.09c-5.58.1-10.01 5.32-9.9 11.67.11 6.34 4.72 11.41 10.3 11.31 5.58-.1 10.01-5.32 9.9-11.67-.11-6.34-4.72-11.41-10.3-11.31z"/>
+    <path fill="#fdfcf5" d="M198.08 83.1s.46-.73 1.28-2.1c2.28-3.85 7.6-5.21 11.95-4.54 1.11.17 1.99 1.03 2.18 2.14.5 2.92-1.22 7.89-2.24 10.48-.16.39-.59.59-.99.45-7.27-2.55-12.28 2.32-12.3 9.7-.01 4.12-.02 9.86-.05 17.21-.01 4.08-4.74 4.54-8.06 3.99-3.85-.64-4.19-2.88-4.13-6.65.2-11.53.25-22.68.14-33.46-.02-2.97 2.6-3.42 5.19-3.53 4.54-.21 7.14.97 6.5 5.96-.04.29.28.5.53.35z"/>
+    <path fill="#fdfcf5" d="M226.95 101.9c-.28 0-.49.26-.43.53 1.61 7.17 9.4 9.11 15.54 7.04 1.67-.56 3.27-1.38 4.82-2.45.72-.5 1.68-.47 2.35.08 1.73 1.41 3.06 3.32 3.98 5.71.31.81.13 1.73-.47 2.37-6.12 6.53-18.52 7.23-26.1 3.88-7.05-3.13-11.18-8.98-12.39-17.55-1.48-10.49 4.58-21.95 15.24-24.49 9.11-2.16 16.21-.07 21.32 6.27 3.87 4.81 4.85 10.8 4.67 16.71-.02 1.06-.88 1.9-1.96 1.9H226.95zm-.26-7.68h17.22s.05-.05.05-.11v-.07c.04-4.07-3.78-7.42-8.55-7.47h-.18c-4.77-.05-8.66 3.21-8.71 7.32v.07c0 .06.05.11.11.11z"/>
+    <path fill="#fdfcf5" d="M319.62 99.57c.28 5.33-3.5 8.55-8.37 9.18-7.13.92-12.76-1.44-16.91-7.07-2.85-3.86-3.01-11.04-1.98-15.57 1.87-8.23 9.12-13.24 17.61-12.37 4.71.48 7.72 2.67 11.52 5.48.3.22.7.22 1 0 2.68-2.03 4.57-4.21 5.68-6.54.48-1 .32-2.2-.41-3.04-8.13-9.42-23.48-10.15-33.56-4.65-6.65 3.63-11.22 8.98-13.69 16.05-3.3 9.4-2.21 20.03 3.57 28.16 8.25 11.62 23.15 15 36.07 8.93 2.87-1.35 5.19-3.23 6.97-5.64 4.83-6.53 5.31-12.91 4.41-21.05-.22-1.94-1.12-3.05-3.06-3.11-6.32-.21-12.7-.26-19.14-.15-1.23.02-2.3.85-2.65 2.03-.48 1.66-.52 3.59-.13 5.8.42 2.3 2.35 2.62 4.43 2.62 2.52-.01 5.15.06 7.88.19.41.02.74.34.76.75z"/>
+    <path fill="#fdfcf5" d="M378.56 98.51c.03 10.33.06 16.41.08 18.22.04 4.1-5.92 4.04-8.64 3.44-1.73-.38-2.73-1.55-2.99-3.51-.04-.26-.35-.38-.55-.21-5.33 4.55-11.19 5.67-17.58 3.34-8.97-3.27-12.93-12.1-12.96-21.15-.03-9.04 3.88-17.9 12.83-21.22 6.37-2.37 12.24-1.29 17.6 3.23.2.16.51.04.55-.22.24-1.96 1.23-3.14 2.96-3.53 2.72-.61 8.68-.71 8.66 3.39-.01 1.81 0 7.88.04 18.22zm-21.35-11.43c-5.31.08-9.54 5.31-9.43 11.68.1 6.37 4.49 11.46 9.8 11.38 5.31-.08 9.54-5.31 9.44-11.68-.1-6.37-4.49-11.46-9.81-11.38z"/>
+    <path fill="#fdfcf5" d="M398.61 83.23s.45-.72 1.26-2.08c2.25-3.83 7.52-5.2 11.84-4.55 1.1.17 1.97 1.02 2.16 2.12.51 2.89-1.18 7.83-2.18 10.4-.16.39-.59.59-.98.45-7.22-2.51-12.17 2.34-12.17 9.66.01 4.08.01 9.77.01 17.06 0 4.05-4.69 4.52-7.98 3.99-3.82-.62-4.17-2.84-4.12-6.58.16-11.43.17-22.5.03-33.18-.03-2.95 2.57-3.4 5.14-3.52 4.5-.23 7.08.94 6.46 5.89-.04.29.28.49.53.34z"/>
+    <path fill="#fdfcf5" d="M445.64 80.17c0 .21-.24.34-.41.21-5.81-4.47-12.03-5.32-18.66-2.54-6.5 2.73-10.8 9.9-11.69 16.88-1.05 8.13 1.07 15.05 6.35 20.75 6.48 6.99 17.2 7.35 24.19 1.17.12-.11.32-.06.38.1.78 2.17 2.18 3.38 4.19 3.65 2.57.34 7.78.04 7.76-3.61-.07-12.68-.05-29.24.07-49.67.02-3.82.59-7.86-4.24-7.84-3.97.02-8.04-.75-8.01 4.48.05 8.67.08 14.14.07 16.42zm-9.58 6.95c-5.32.2-9.43 5.51-9.18 11.86.25 6.35 4.76 11.33 10.07 11.13 5.32-.2 9.43-5.51 9.18-11.86-.24-6.35-4.75-11.33-10.07-11.13z"/>
+    <path fill="#fdfcf5" d="M476.26 101.94c-.28 0-.49.26-.43.53 1.65 7.12 9.41 9 15.51 6.91 1.66-.57 3.26-1.39 4.79-2.47.71-.51 1.67-.48 2.34.06 1.73 1.4 3.06 3.28 4 5.66.31.81.13 1.72-.46 2.36-6.05 6.54-18.38 7.31-25.94 4.02-7.04-3.06-11.18-8.86-12.44-17.38-1.54-10.43 4.42-21.87 15.01-24.47 9.05-2.2 16.13-.17 21.25 6.11 3.89 4.76 4.9 10.72 4.75 16.6-.02 1.05-.88 1.9-1.93 1.9l-26.45.17zm-.41-7.65h17.02s.05-.05.05-.11v-.05c.02-4.11-3.81-7.45-8.54-7.48h-.16c-4.72-.03-8.57 3.28-8.59 7.38v.05c0 .07.05.12.12.12z"/>
+    <path fill="#fdfcf5" d="M522.42 81.94c3.65-4.17 8.11-6.01 13.38-5.54 9.53.87 13.19 7.83 13.37 16.61.11 5.27.18 12.78.19 22.54.01 4.91-3.48 5.12-8.02 4.84-3.96-.24-4.6-2.96-4.54-6.71.16-9.15.24-14.29.23-15.42-.02-4.69-.63-10.82-6.75-11.04-4.84-.18-7.8 3.52-8.07 8.05-.08 1.41-.05 8.15.08 20.22.05 4.76-3.86 5.01-8.27 4.92-3.75-.08-4.2-2.67-4.19-6.11.05-15.11.06-26.43.04-33.97-.01-1.32.74-2.33 2.25-3.04.2-.09.41-.15.64-.18 4.03-.38 8.9-1.49 9.09 4.62.01.29.37.43.56.21z"/>
+    <path fill="#fdfcf5" d="M560.05 106.52c.49-.25 1.08-.17 1.48.2 3.9 3.64 9.57 5.4 14.56 3.42 1.26-.5 1.94-1.85 1.58-3.12-.58-2.02-7.22-3.63-11.27-4.67-1.71-.43-3.93-1.43-6.68-3-.38-.22-.72-.49-1.01-.81-4.17-4.59-4.99-9.45-2.46-14.59 2.62-5.34 8.1-7.04 13.78-7.57 5.35-.51 10.15.58 14.4 3.27 4.85 3.06 3.63 6.67-.32 9.6-.79.58-1.84.67-2.71.22-3.51-1.83-12.11-5.96-14.33-.93-.93 2.11 1.35 3.25 3.07 3.83 7.97 2.71 19.54 3.68 18.9 15.32-.23 4.24-1.91 7.5-5.04 9.78-7.98 5.82-22.9 4.29-29.32-3.32-.62-.72-.66-1.78-.1-2.55 1.77-2.44 3.58-4.13 5.45-5.08z"/>
+    <ellipse fill="#144223" cx="0" cy="0" transform="translate(110.88,98.60) rotate(-89.8)" rx="11.53" ry="10.13"/>
+    <ellipse fill="#144223" cx="0" cy="0" transform="translate(158.37,98.59) rotate(-91.0)" rx="11.49" ry="10.10"/>
+    <ellipse fill="#144223" cx="0" cy="0" transform="translate(357.39,98.61) rotate(-90.9)" rx="11.53" ry="9.62"/>
+    <ellipse fill="#144223" cx="0" cy="0" transform="translate(436.50,98.61) rotate(-92.2)" rx="11.50" ry="9.63"/>
+    <path fill="#144223" d="M226.69 94.22c-.06 0-.11-.05-.11-.11v-.07c.05-4.08 3.94-7.34 8.71-7.29h.18c4.77.05 8.59 3.4 8.55 7.47v.07c0 .06-.05.11-.11.11l-17.22-.18z"/>
+    <path fill="#144223" d="M475.85 94.29c-.07 0-.12-.06-.12-.13v-.05c.02-4.1 5.87-7.41 8.59-7.38h.16c4.73.03 8.56 3.37 8.54 7.48v.05c0 .06-.05.11-.12.11l-17.05-.08z"/>
+    <path fill="#e68e2c" d="M611.85 91.81c4.65.01 4.98-3.76 5.59-7.41 2.33-14 4.08-27.38 5.23-40.13.68-7.54-2.33-13.4-10.6-13.43-8.27-.03-11.33 5.81-10.7 13.35 1.06 12.76 2.71 26.15 4.94 40.17.59 3.65.89 7.43 5.54 7.45z"/>
+    <path fill="#8db63a" d="M625.32 85.26c.23.23.71.35 1.43.34 11.09-.11 21.71-2.23 29.23-10.84 6.33-7.23 9.63-15.81 9.91-25.74.03-1.06-.07-1.72-.3-1.96-.23-.24-.88-.38-1.95-.41-9.92-.24-18.66 2.61-26.22 8.54-9 7.06-11.67 17.55-12.37 28.62-.04.72.05 1.21.27 1.45z"/>
+    <rect fill="#e68e2c" x="-10.84" y="-11.14" transform="translate(611.93,109.81) rotate(1.6)" width="21.68" height="22.28" rx="9.88"/>
+  </svg>
+  <div class="header-sub">2026 Garden Plan — Zone 5b Columbus</div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="showView('map')">Garden Map</button>
+  <button class="tab" onclick="showView('cal')">Calendar</button>
+</div>
+
+<!-- MAP VIEW -->
+<div id="map-view" class="map-view"></div>
+
+<!-- CALENDAR VIEW -->
+<div id="cal-view" class="cal-view hidden"></div>
+
+<script>
+const BEDS = [
+  {id:"B1",sec:"back",row:0,wFt:3,status:"priority",label:"Back 1",plan:"Peas\nSnap Peas",sub:"trellis south side",timing:"Direct sow now",notes:"Inoculant helps. Harvest by late June."},
+  {id:"B2",sec:"back",row:0,wFt:3,status:"priority",label:"Back 2",plan:"Lettuce\nArugula",sub:"succession sow every 2 wks",timing:"Direct sow now",notes:"Shade cloth by June or let bolt."},
+  {id:"B3",sec:"back",row:1,wFt:3,status:"garlic",label:"Back 3",plan:"Garlic",sub:"overwintered",timing:"Harvest early July",notes:"Scape mid-June. Buckwheat cover after."},
+  {id:"B4",sec:"back",row:1,wFt:3,status:"priority",label:"Back 4",plan:"Kale\nChard\nRadishes",sub:"",timing:"Direct sow now",notes:"Radishes mark rows, harvest early."},
+  {id:"F1",sec:"front",row:0,wFt:2,status:"herb",label:"Herb 1",plan:"Thyme\nMarjoram\nOregano",sub:"perennial",timing:"Transplant late April",notes:"Your indoor starts! Set-and-forget."},
+  {id:"F2",sec:"front",row:0,wFt:2,status:"cover",label:"Cover 1",plan:"Carrots\nBeets\nSpinach",sub:"",timing:"Turn cover late Apr, sow May",notes:"Half root veg, half greens."},
+  {id:"F3",sec:"front",row:0,wFt:2,status:"garlic",label:"Garlic 2",plan:"Garlic",sub:"overwintered",timing:"Harvest early July",notes:"Bush beans after = easy nitrogen."},
+  {id:"F4",sec:"front",row:0,wFt:3,status:"cover",label:"Cover 2",plan:"Tomatoes\n6–8 plants",sub:"",timing:"Turn May 1, transplant late May",notes:"Stake at planting. 3ft bed = room."},
+  {id:"F5",sec:"front",row:0,wFt:2,status:"cover",label:"Cover 3",plan:"Peppers\nBasil",sub:"",timing:"Turn May 1, transplant early Jun",notes:"Peppers love heat — no rush."},
+  {id:"F6",sec:"front",row:1,wFt:2,status:"herb",label:"Herb 2",plan:"Sage\nRosemary\nChives",sub:"perennial",timing:"Transplant late Apr–May",notes:"Rosemary needs sunniest end."},
+  {id:"F7",sec:"front",row:1,wFt:2,status:"herb",label:"Herb 3",plan:"Bunching\nOnions\nParsley",sub:"+ cilantro",timing:"Transplant late April",notes:"Succession sow cilantro every 3 wks."},
+  {id:"F8",sec:"front",row:1,wFt:2,status:"garlic",label:"Garlic 3",plan:"Garlic",sub:"overwintered",timing:"Harvest early July",notes:"Cover crop with buckwheat after."},
+  {id:"F9",sec:"front",row:1,wFt:3,status:"cover",label:"Cover 4",plan:"Cucumbers\nDill\nZinnias",sub:"",timing:"Turn May 1, transplant late May",notes:"Trellis cukes. Nasturtiums on edges."},
+  {id:"F10",sec:"front",row:1,wFt:2,status:"cover",label:"Cover 5",plan:"Squash\nCosmos",sub:"",timing:"Turn late Apr, plant mid-May",notes:"1 zucchini + 1 patty pan + cosmos."},
+];
+
+const CALENDAR = [
+  {week:"Apr 3–10",phase:"now",tasks:[{bed:"B1, B2, B4",action:"Direct sow peas, lettuce, arugula, kale, chard, radishes",p:"high"},{bed:"Indoor",action:"Start tomatoes & peppers if not already (6–8 wk lead)",p:"high"},{bed:"Back beds",action:"Soil test + amend with compost before sowing",p:"med"}]},
+  {week:"Apr 10–17",phase:"now",tasks:[{bed:"B2",action:"Second succession sow lettuce + arugula",p:"med"},{bed:"Indoor",action:"Start basil, zinnias, cosmos indoors",p:"med"},{bed:"F1, F6, F7",action:"Prep herb beds — amend soil, mark layout",p:"low"}]},
+  {week:"Apr 17–24",phase:"now",tasks:[{bed:"B2",action:"Third succession sow lettuce",p:"med"},{bed:"Indoor",action:"Harden off thyme, marjoram, bunching onions",p:"high"},{bed:"Covers",action:"Mow/chop cover crops, work into top 2\" of soil",p:"high"}]},
+  {week:"Apr 24–May 1",phase:"spring",tasks:[{bed:"F1, F6, F7",action:"Transplant herbs: thyme, marjoram, onions, parsley, oregano, chives, sage",p:"high"},{bed:"Cover beds",action:"Let chopped cover decompose — don't plant yet",p:"low"},{bed:"F6",action:"Source rosemary + sage transplants if not started",p:"med"}]},
+  {week:"May 1–15",phase:"spring",tasks:[{bed:"F10",action:"Plant squash starts after last frost (~May 10)",p:"high"},{bed:"F2",action:"Direct sow carrots, beets, spinach",p:"high"},{bed:"F9, F10",action:"Direct sow zinnias, cosmos, nasturtiums",p:"med"},{bed:"B3, F3, F8",action:"Side-dress garlic with compost or fish emulsion",p:"med"}]},
+  {week:"May 15–31",phase:"summer",tasks:[{bed:"F4",action:"Transplant tomatoes (6–8 plants). Stake immediately.",p:"high"},{bed:"F9",action:"Transplant cucumbers + direct sow dill. Trellis.",p:"high"},{bed:"B1",action:"Interplant basil among peas as peas finish",p:"low"}]},
+  {week:"Jun 1–15",phase:"summer",tasks:[{bed:"F5",action:"Transplant peppers + basil.",p:"high"},{bed:"B3, F3, F8",action:"Harvest garlic scapes for cooking",p:"med"},{bed:"B2, B4",action:"Shade cloth on greens if bolting.",p:"low"}]},
+  {week:"Jul 1–15",phase:"summer",tasks:[{bed:"B3, F3, F8",action:"Harvest garlic when lower leaves brown. Cure 2 wks.",p:"high"},{bed:"B3, F3, F8",action:"After harvest: buckwheat cover or bush beans",p:"med"},{bed:"F9, F10",action:"Cut flowers regularly — re-bloom all summer",p:"low"}]},
+];
+
+const STARTS = [
+  {plant:"Thyme",s:"done",t:"Late Apr transplant"},
+  {plant:"Marjoram",s:"done",t:"Late Apr transplant"},
+  {plant:"Bunching Onions",s:"done",t:"Late Apr transplant"},
+  {plant:"Tomatoes",s:"now",t:"Start by mid-Apr → late May transplant"},
+  {plant:"Peppers",s:"now",t:"Start by mid-Apr → early Jun transplant"},
+  {plant:"Basil",s:"soon",t:"Start late Apr → late May transplant"},
+  {plant:"Zinnias",s:"opt",t:"Start indoors or direct sow mid-May"},
+  {plant:"Cosmos",s:"opt",t:"Direct sow mid-May"},
+];
+
+const LEGEND = [
+  {status:"priority",label:"Plant Now"},{status:"garlic",label:"Garlic → July"},
+  {status:"cover",label:"Cover → Summer"},{status:"herb",label:"Perennial Herbs"},
+];
+
+const TIPS = [
+  ["Mulch everything","2–3\" straw on all beds by late May. Halves watering, kills weeds."],
+  ["Flowers = free labor","Zinnias, cosmos, sunflowers need nothing after sowing."],
+  ["Skip succession after June","Focus on what's in the ground. Fall round in Aug if you want."],
+  ["Herbs are set-and-forget","Once perennials establish, they handle themselves."],
+];
+
+let selected = null;
+
+function showView(v) {
+  document.getElementById('map-view').classList.toggle('hidden', v !== 'map');
+  document.getElementById('cal-view').classList.toggle('hidden', v !== 'cal');
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', (i === 0 && v === 'map') || (i === 1 && v === 'cal'));
+  });
+}
+
+function selectBed(id) {
+  selected = selected === id ? null : id;
+  renderMap();
+}
+
+function getScale() {
+  const w = document.getElementById('map-view').offsetWidth - 16;
+  const frontGap = 4;
+  return Math.floor((w - 4 * frontGap) / 11);
+}
+
+function renderMap() {
+  const scale = getScale();
+  const backGap = Math.round(scale * 0.6);
+  const frontGap = 4;
+  const sectionGap = Math.round(scale * 1.5);
+  const fontSize = scale >= 28 ? 12 : scale >= 22 ? 11 : 10;
+  const labelSize = Math.max(8, fontSize - 3);
+
+  const backR0 = BEDS.filter(b => b.sec==='back' && b.row===0);
+  const backR1 = BEDS.filter(b => b.sec==='back' && b.row===1);
+  const frontR0 = BEDS.filter(b => b.sec==='front' && b.row===0);
+  const frontR1 = BEDS.filter(b => b.sec==='front' && b.row===1);
+
+  function bedHTML(b) {
+    const w = b.wFt * scale;
+    const h = 8 * scale;
+    const isSel = selected === b.id;
+    return `<div class="bed ${b.status}${isSel?' selected':''}" onclick="selectBed('${b.id}')"
+      style="width:${w}px;min-width:${w}px;height:${h}px">
+      <div class="bed-plan" style="font-size:${fontSize}px">${b.plan.replace(/\n/g,'<br>')}</div>
+      <div class="bed-label" style="font-size:${labelSize}px">${b.label}</div>
+    </div>`;
+  }
+
+  function rowHTML(beds, gap) {
+    return `<div class="grid-row" style="gap:${gap}px">${beds.map(bedHTML).join('')}</div>`;
+  }
+
+  const selBed = BEDS.find(b => b.id === selected);
+  let detailHTML = '';
+  if (selBed) {
+    const badgeCls = selBed.status;
+    const legend = LEGEND.find(l => l.status === selBed.status);
+    detailHTML = `<div class="detail" style="border-color:var(--st-${badgeCls}-border)">
+      <div class="detail-header">
+        <span class="detail-name">${selBed.label}</span>
+        <span class="detail-badge" style="background:var(--st-${badgeCls}-bg);border-color:var(--st-${badgeCls}-border)">${legend?.label||''}</span>
+      </div>
+      <div class="detail-plan">${selBed.plan.replace(/\n/g,'<br>')}</div>
+      ${selBed.sub ? `<div class="detail-sub">${selBed.sub}</div>` : ''}
+      <div class="detail-row"><span class="when">WHEN</span>${selBed.timing}</div>
+      <div class="detail-row tip-row"><span class="tip">TIP</span>${selBed.notes}</div>
+    </div>`;
+  } else {
+    detailHTML = '<div class="detail-hint">Tap any bed for details</div>';
+  }
+
+  document.getElementById('map-view').innerHTML = `
+    <div class="compass"><span>← East fence (shade)</span><span>☀ South ↑</span></div>
+    <div class="grid-wrap">
+      ${rowHTML(backR0, backGap)}
+      <div style="height:${backGap*0.5}px"></div>
+      ${rowHTML(backR1, backGap)}
+      <div style="height:${sectionGap}px"></div>
+      ${rowHTML(frontR0, frontGap)}
+      <div style="height:${frontGap}px"></div>
+      ${rowHTML(frontR1, frontGap)}
+    </div>
+    <div class="legend">
+      ${LEGEND.map(l => `<div class="legend-item">
+        <div class="legend-dot" style="background:var(--st-${l.status}-bg);border:1px solid var(--st-${l.status}-border)"></div>
+        ${l.label}
+      </div>`).join('')}
+    </div>
+    ${detailHTML}
+    <div class="starts-wrap">
+      <div class="starts-title">Indoor Starts</div>
+      ${STARTS.map(s => `<div class="start-row">
+        <div><div class="start-name">${s.plant}</div><div class="start-timing">${s.t}</div></div>
+        <span class="start-badge ${s.s}">${s.s==='done'?'✓ Started':s.s==='now'?'⏰ Start Now':s.s==='soon'?'Late Apr':'Optional'}</span>
+      </div>`).join('')}
+    </div>
+  `;
+}
+
+function renderCal() {
+  document.getElementById('cal-view').innerHTML = `
+    <div class="cal-intro">Front-loaded for farm chef season. Heavy lifting now → May, then coast.</div>
+    ${CALENDAR.map(wk => `<div class="cal-week">
+      <span class="cal-badge ${wk.phase}">${wk.week}</span>
+      ${wk.tasks.map(t => `<div class="cal-task ${t.p}">
+        <span class="cal-bed">${t.bed}</span>
+        <span class="cal-action">${t.action}</span>
+      </div>`).join('')}
+    </div>`).join('')}
+    <div class="tips">
+      <div class="tips-title">Farm Chef Season Survival</div>
+      ${TIPS.map(([h,b]) => `<div class="tips-item"><strong>${h}</strong> — ${b}</div>`).join('')}
+    </div>
+  `;
+}
+
+window.addEventListener('resize', () => { if (!document.getElementById('map-view').classList.contains('hidden')) renderMap(); });
+renderMap();
+renderCal();
+</script>
+</body>
+</html>
