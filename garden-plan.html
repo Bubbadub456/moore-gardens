@@ -315,18 +315,27 @@ function selectBed(id) {
 }
 
 function getScale() {
-  const w = document.getElementById('map-view').offsetWidth - 16;
+  const containerW = document.getElementById('map-view').offsetWidth - 16;
   const frontGap = 4;
-  return Math.floor((w - 4 * frontGap) / 11);
+  const scaleW = Math.floor((containerW - 4 * frontGap) / 11);
+
+  // Constrain by viewport height so grid fits on one screen
+  // Chrome: header(55) + tabs(40) + compass(20) + grid padding(24) + legend(30) + hint(35) ≈ 204
+  const availH = window.innerHeight - 204;
+  // Grid height: 4 bed rows × 8ft + inner gaps + section gap
+  // = 32*s + 0.3*s + 1.2*s + 4 ≈ 33.5*s
+  const scaleH = Math.floor((availH - 4) / 33.5);
+
+  return Math.min(scaleW, scaleH);
 }
 
 function renderMap() {
   const scale = getScale();
-  const backGap = Math.round(scale * 0.6);
+  const backGap = Math.round(scale * 0.4);
   const frontGap = 4;
-  const sectionGap = Math.round(scale * 1.5);
-  const fontSize = scale >= 28 ? 12 : scale >= 22 ? 11 : 10;
-  const labelSize = Math.max(8, fontSize - 3);
+  const sectionGap = Math.round(scale * 1);
+  const fontSize = scale >= 28 ? 12 : scale >= 22 ? 11 : scale >= 16 ? 10 : 9;
+  const labelSize = Math.max(7, fontSize - 3);
 
   const backR0 = BEDS.filter(b => b.sec==='back' && b.row===0);
   const backR1 = BEDS.filter(b => b.sec==='back' && b.row===1);
