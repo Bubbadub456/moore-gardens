@@ -220,8 +220,6 @@
     }
   });
 
-  const SUPABASE_URL = 'https://wcrcccrgaiesafmmzqgx.supabase.co';
-  const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjcmNjY3JnYWllc2FmbW16cWd4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDQ3OTUxMSwiZXhwIjoyMDkwMDU1NTExfQ.RuXKqDdspupi2tHSsEuJgYWTS4oUcgG2w36wS3Hg8to';
   const TAG_OPTIONS = ['seedlings','propagation','setup','harvest','pollinators','garden life','bloom','soil'];
 
   const photoInput = document.getElementById('photoInput');
@@ -322,6 +320,14 @@
     });
   }
 
+  function blobToBase64(blob) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.readAsDataURL(blob);
+    });
+  }
+
   uploadBtn.addEventListener('click', async () => {
     if (!photoCards.length) return;
     uploadBtn.disabled = true;
@@ -337,31 +343,29 @@
 
         statusEl.textContent = total === 1 ? 'resizing...' : `resizing ${i + 1} of ${total}...`;
         const resized = await resizeImage(card.file, 1200);
-        const filename = `${Date.now()}-${i}.jpg`;
 
         statusEl.textContent = total === 1 ? 'uploading...' : `uploading ${i + 1} of ${total}...`;
-        const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/photos/${filename}`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'Content-Type': 'image/jpeg' },
-          body: resized,
-        });
-        if (!uploadRes.ok) throw new Error(`Photo ${i + 1} upload failed`);
+        const base64 = await blobToBase64(resized);
+        const fileName = `${Date.now()}-${i}.jpg`;
 
-        const photoUrl = `${SUPABASE_URL}/storage/v1/object/public/photos/${filename}`;
-        const row = { title, photo_url: photoUrl };
-        if (card.tags.length > 0) row.tags = card.tags;
-        if (thought) row.thought_note = thought;
-
-        const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/gallery`, {
+        const res = await fetch('/api/upload', {
           method: 'POST',
-          headers: {
-            'apikey': SERVICE_KEY,
-            'Authorization': `Bearer ${SERVICE_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(row),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileName,
+            fileBase64: base64,
+            contentType: 'image/jpeg',
+            title,
+            tags: card.tags,
+            plant,
+            thought,
+          }),
         });
-        if (!insertRes.ok) throw new Error(`Save ${i + 1} failed`);
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `Upload ${i + 1} failed`);
+        }
       }
 
       statusEl.textContent = total === 1 ? 'live on mooregardens.farm!' : `${total} photos live on mooregardens.farm!`;
