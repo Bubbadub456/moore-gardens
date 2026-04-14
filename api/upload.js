@@ -8,15 +8,30 @@ export default async function handler(req, res) {
     process.env.SUPABASE_SERVICE_KEY
   );
 
-  // Expect base64 image + filename from the client
-  const { fileName, fileBase64, contentType } = req.body;
+  const { fileName, fileBase64, contentType, title, tags, plant, thought } = req.body;
 
   const buffer = Buffer.from(fileBase64, 'base64');
 
+  // 1. Upload file to storage
   const { data, error } = await supabase.storage
-    .from('photos') // your bucket name
+    .from('photos')
     .upload(fileName, buffer, { contentType });
 
   if (error) return res.status(500).json({ error: error.message });
-  return res.status(200).json({ path: data.path });
+
+  // 2. Build public URL and insert into gallery table
+  const photo_url = `${process.env.SUPABASE_URL}/storage/v1/object/public/photos/${fileName}`;
+
+  const { error: insertError } = await supabase
+    .from('gallery')
+    .insert({
+      title: title || 'Untitled',
+      tags: tags || [],
+      photo_url,
+      thought_note: thought || null,
+    });
+
+  if (insertError) return res.status(500).json({ error: insertError.message });
+
+  return res.status(200).json({ path: data.path, photo_url });
 }

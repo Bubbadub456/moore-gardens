@@ -333,14 +333,16 @@
     uploadBtn.disabled = true;
     statusEl.className = 'status';
     const total = photoCards.length;
+    let succeeded = 0;
+    const failed = [];
 
-    try {
-      for (let i = 0; i < total; i++) {
-        const card = photoCards[i];
-        const title = document.querySelector(`input[data-field="title"][data-card="${card.id}"]`).value.trim();
-        const plant = document.querySelector(`input[data-field="plant"][data-card="${card.id}"]`).value.trim() || null;
-        const thought = document.querySelector(`textarea[data-field="thought"][data-card="${card.id}"]`).value.trim() || null;
+    for (let i = 0; i < total; i++) {
+      const card = photoCards[i];
+      const title = document.querySelector(`input[data-field="title"][data-card="${card.id}"]`).value.trim();
+      const plant = document.querySelector(`input[data-field="plant"][data-card="${card.id}"]`).value.trim() || null;
+      const thought = document.querySelector(`textarea[data-field="thought"][data-card="${card.id}"]`).value.trim() || null;
 
+      try {
         statusEl.textContent = total === 1 ? 'resizing...' : `resizing ${i + 1} of ${total}...`;
         const resized = await resizeImage(card.file, 1200);
 
@@ -364,21 +366,28 @@
 
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || `Upload ${i + 1} failed`);
+          throw new Error(err.error || `failed`);
         }
+        succeeded++;
+      } catch (err) {
+        failed.push(`"${title}" — ${err.message}`);
       }
+    }
 
+    if (failed.length === 0) {
       statusEl.textContent = total === 1 ? 'live on mooregardens.farm!' : `${total} photos live on mooregardens.farm!`;
       statusEl.className = 'status success';
-
       photoCards = [];
       cardsEl.innerHTML = '';
       photoInput.value = '';
       uploadBtn.classList.add('hidden');
       uploadBtn.disabled = true;
-
-    } catch (err) {
-      statusEl.textContent = err.message;
+    } else if (succeeded > 0) {
+      statusEl.textContent = `${succeeded} uploaded, ${failed.length} failed: ${failed.join('; ')}`;
+      statusEl.className = 'status error';
+      uploadBtn.disabled = false;
+    } else {
+      statusEl.textContent = `upload failed: ${failed.join('; ')}`;
       statusEl.className = 'status error';
       uploadBtn.disabled = false;
     }
