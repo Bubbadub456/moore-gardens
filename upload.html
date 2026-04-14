@@ -365,8 +365,10 @@
         });
 
         if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || `failed`);
+          const raw = await res.text().catch(() => '');
+          let msg;
+          try { msg = JSON.parse(raw).error; } catch(e) {}
+          throw new Error(msg || `${res.status}: ${raw.slice(0, 120)}`);
         }
         succeeded++;
       } catch (err) {
