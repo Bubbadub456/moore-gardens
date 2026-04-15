@@ -3,9 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
-  let step = 'init';
   try {
-    const supabaseStorage = createClient(
+    const supabase = createClient(
       process.env.SUPABASE_URL,
       process.env.SUPABASE_SERVICE_KEY
     );
@@ -16,21 +15,18 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing fileName or fileBase64' });
     }
 
-    step = 'decode';
     const buffer = Buffer.from(fileBase64, 'base64');
 
-    // 1. Upload file to storage (supabase-js client — works with legacy key)
-    step = 'storage';
-    const { data, error } = await supabaseStorage.storage
+    // 1. Upload file to storage
+    const { data, error } = await supabase.storage
       .from('photos')
       .upload(fileName, buffer, { contentType });
 
-    if (error) return res.status(500).json({ error: `storage: ${error.message}` });
+    if (error) return res.status(500).json({ error: error.message });
 
-    // 2. Insert into gallery table via direct PostgREST call
-    step = 'insert';
+    // 2. Insert into gallery table via PostgREST
     const photo_url = `${process.env.SUPABASE_URL}/storage/v1/object/public/photos/${fileName}`;
-    const dbKey = process.env.SUPABASE_DB_KEY || process.env.SUPABASE_SERVICE_KEY;
+    const key = process.env.SUPABASE_SERVICE_KEY;
 
     const insertRes = await fetch(
       `${process.env.SUPABASE_URL}/rest/v1/gallery`,
@@ -38,8 +34,8 @@ export default async function handler(req, res) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': dbKey,
-          'Authorization': `Bearer ${dbKey}`,
+          'apikey': key,
+          'Authorization': `Bearer ${key}`,
           'Prefer': 'return=minimal',
         },
         body: JSON.stringify({
@@ -53,12 +49,12 @@ export default async function handler(req, res) {
 
     if (!insertRes.ok) {
       const errBody = await insertRes.text().catch(() => '');
-      return res.status(500).json({ error: `insert ${insertRes.status}: ${errBody.slice(0, 200)}` });
+      return res.status(500).json({ error: errBody || 'Gallery insert failed' });
     }
 
     return res.status(200).json({ path: data.path, photo_url });
 
   } catch (err) {
-    return res.status(500).json({ error: `crash at ${step}: ${err.message}` });
+    return res.status(500).json({ error: err.message });
   }
 }
