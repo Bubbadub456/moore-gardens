@@ -5,9 +5,14 @@ export default async function handler(req, res) {
 
   let step = 'init';
   try {
-    const supabase = createClient(
+    const supabaseStorage = createClient(
       process.env.SUPABASE_URL,
       process.env.SUPABASE_SERVICE_KEY
+    );
+
+    const supabaseDb = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_DB_KEY || process.env.SUPABASE_SERVICE_KEY
     );
 
     const { fileName, fileBase64, contentType, title, tags, plant, thought } = req.body;
@@ -21,7 +26,7 @@ export default async function handler(req, res) {
 
     // 1. Upload file to storage
     step = 'storage';
-    const { data, error } = await supabase.storage
+    const { data, error } = await supabaseStorage.storage
       .from('photos')
       .upload(fileName, buffer, { contentType });
 
@@ -31,7 +36,7 @@ export default async function handler(req, res) {
     step = 'insert';
     const photo_url = `${process.env.SUPABASE_URL}/storage/v1/object/public/photos/${fileName}`;
 
-    const { error: insertError } = await supabase
+    const { error: insertError } = await supabaseDb
       .from('gallery')
       .insert({
         title: title || 'Untitled',
