@@ -261,6 +261,27 @@
   }
 
   /* ── ABOUT ── */
+  .see-all-wrap {
+    text-align: center;
+    margin-top: 2rem;
+  }
+  .see-all-btn {
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: var(--dark-green);
+    background: none;
+    border: 2px solid rgba(20,66,35,0.15);
+    border-radius: 100px;
+    padding: 0.7rem 2rem;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .see-all-btn:hover {
+    border-color: var(--orange);
+    color: var(--orange);
+  }
   .about-wrapper {
     background: var(--warm-gray);
   }
@@ -512,6 +533,9 @@
     <span class="label">Gallery</span>
   </div>
   <div class="gallery-grid" id="galleryGrid"></div>
+  <div class="see-all-wrap" id="seeAllWrap" style="display:none;">
+    <button class="see-all-btn" id="seeAllBtn">See All Photos</button>
+  </div>
 </section>
 
 <div class="about-wrapper" id="about">
@@ -595,7 +619,10 @@
   }
 
   let galleryPhotos = [];
+  let allLoaded = false;
   const grid = document.getElementById('galleryGrid');
+  const seeAllWrap = document.getElementById('seeAllWrap');
+  const seeAllBtn = document.getElementById('seeAllBtn');
 
   function renderGallery(photos) {
     galleryPhotos = photos;
@@ -622,10 +649,11 @@
     renderGallery(galleryPhotos);
   }
 
-  async function loadGallery() {
+  async function loadGallery(showAll) {
     try {
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/gallery?select=*&order=created_at.desc&limit=20`,
+      let url = `${SUPABASE_URL}/rest/v1/gallery?select=*&order=created_at.desc`;
+      if (!showAll) url += '&limit=20';
+      const res = await fetch(url,
         { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } }
       );
       const photos = await res.json();
@@ -635,6 +663,13 @@
           date: new Date(p.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
           photo_url: p.photo_url,
         })));
+        // Show "See All" only on initial load when we hit the limit
+        if (!showAll && photos.length >= 20) {
+          seeAllWrap.style.display = '';
+        } else {
+          seeAllWrap.style.display = 'none';
+          allLoaded = true;
+        }
       } else {
         renderPlaceholders();
       }
@@ -643,7 +678,12 @@
     }
   }
 
-  loadGallery();
+  loadGallery(false);
+
+  seeAllBtn.addEventListener('click', function() {
+    seeAllBtn.textContent = 'Loading…';
+    loadGallery(true);
+  });
 
   // Lightbox
   let currentIndex = 0;
