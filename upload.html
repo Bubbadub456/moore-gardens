@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
 <title>Moore Gardens — Upload</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
@@ -15,10 +16,40 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 2rem 1.5rem 4rem;
+    padding: 2rem 1rem 4rem;
   }
   h1 { font-size: 1.4rem; font-weight: 900; margin-bottom: 1.5rem; text-align: center; }
   h1 span { color: #e68e2c; }
+  a { color: #8db63a; }
+  .wrap { width: 100%; max-width: 420px; }
+  .hidden { display: none !important; }
+
+  /* gate */
+  .gate { display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-top: 3rem; }
+  .gate input {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 0.9rem 1.2rem;
+    color: #fdfcf5;
+    font-family: inherit;
+    font-size: 1rem;
+    outline: none;
+    text-align: center;
+    width: 240px;
+  }
+  .gate input:focus { border-color: #8db63a; }
+  .gate .hint { font-size: 0.75rem; opacity: 0.4; }
+  .gate .msg { color: #e68e2c; font-size: 0.85rem; min-height: 1.2rem; text-align: center; max-width: 320px; }
+  .gate button { width: 240px; }
+
+  /* tabs */
+  .tabs { display: flex; gap: 0.4rem; margin-bottom: 1.2rem; background: rgba(255,255,255,0.06); border-radius: 12px; padding: 0.3rem; }
+  .tabs button {
+    flex: 1; background: none; border: none; color: rgba(255,255,255,0.55);
+    font-family: inherit; font-size: 0.85rem; font-weight: 700; padding: 0.6rem; border-radius: 9px; cursor: pointer;
+  }
+  .tabs button.active { background: rgba(255,255,255,0.12); color: #fdfcf5; }
 
   .pick-btn {
     background: rgba(255,255,255,0.08);
@@ -27,295 +58,336 @@
     padding: 1.5rem 2rem;
     text-align: center;
     cursor: pointer;
-    transition: border-color 0.2s;
     position: relative;
     overflow: hidden;
     width: 100%;
-    max-width: 420px;
-    font-family: 'Nunito', sans-serif;
     font-size: 0.9rem;
-    color: rgba(255,255,255,0.5);
+    color: rgba(255,255,255,0.55);
     margin-bottom: 1.5rem;
   }
   .pick-btn:hover { border-color: #8db63a; }
-  .pick-btn input {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-  }
+  .pick-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 
-  .cards { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 1.2rem; }
-
-  .photo-card {
+  .cards { display: flex; flex-direction: column; gap: 1.2rem; }
+  .photo-card, .edit-row {
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 16px;
     overflow: hidden;
   }
-  .photo-card img {
-    width: 100%;
-    max-height: 220px;
-    object-fit: cover;
-    display: block;
-  }
-  .card-fields {
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.7rem;
-  }
+  .photo-card.failed { border-color: #e68e2c; }
+  .photo-card img { width: 100%; max-height: 240px; object-fit: cover; display: block; background: rgba(255,255,255,0.05); }
+  .card-fields { padding: 1rem; display: flex; flex-direction: column; gap: 0.7rem; }
+  .card-error { color: #e68e2c; font-size: 0.8rem; }
+  .card-done { color: #8db63a; font-size: 0.8rem; }
 
-  .field-label {
-    font-size: 0.65rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    opacity: 0.35;
-  }
+  .field-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.45; }
   input[type="text"], textarea {
     background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.12);
     border-radius: 8px;
     padding: 0.7rem 0.8rem;
     color: #fdfcf5;
-    font-family: 'Nunito', sans-serif;
-    font-size: 0.85rem;
+    font-family: inherit;
+    font-size: 16px; /* 16px stops iPhone zooming in on focus */
     outline: none;
     width: 100%;
-    transition: border-color 0.2s;
   }
-  input[type="text"]::placeholder, textarea::placeholder { color: rgba(255,255,255,0.25); }
+  input[type="text"]::placeholder, textarea::placeholder { color: rgba(255,255,255,0.3); }
   input[type="text"]:focus, textarea:focus { border-color: #8db63a; }
-  textarea { resize: none; height: 55px; }
+  textarea { resize: vertical; min-height: 60px; }
 
   .tags-wrap { display: flex; flex-wrap: wrap; gap: 0.4rem; }
   .tag-chip {
     background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.12);
     border-radius: 100px;
-    padding: 0.3rem 0.7rem;
-    font-size: 0.72rem;
-    font-weight: 600;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.15s;
     user-select: none;
+    color: inherit;
+    font-family: inherit;
   }
-  .tag-chip:hover { border-color: rgba(255,255,255,0.25); }
   .tag-chip.selected { background: #8db63a; border-color: #8db63a; color: white; }
 
-  .remove-btn {
-    background: none;
-    border: none;
-    color: rgba(255,255,255,0.3);
-    font-size: 0.75rem;
-    cursor: pointer;
-    padding: 0.3rem 0;
-    font-family: 'Nunito', sans-serif;
-    text-align: right;
-    transition: color 0.15s;
+  .row-actions { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; }
+  .link-btn {
+    background: none; border: none; color: rgba(255,255,255,0.45); font-size: 0.8rem;
+    cursor: pointer; padding: 0.3rem 0; font-family: inherit;
   }
-  .remove-btn:hover { color: #e68e2c; }
+  .link-btn:hover { color: #e68e2c; }
+  .link-btn.danger { color: #e68e2c; opacity: 0.8; }
 
-  .upload-btn {
+  .btn {
     background: #e68e2c;
     color: white;
     border: none;
     border-radius: 10px;
-    padding: 1rem;
-    font-family: 'Nunito', sans-serif;
+    padding: 0.95rem 1rem;
+    font-family: inherit;
     font-size: 1rem;
     font-weight: 700;
     cursor: pointer;
-    transition: opacity 0.2s;
     width: 100%;
-    max-width: 420px;
-    margin-top: 0.5rem;
   }
-  .upload-btn:hover { opacity: 0.9; }
-  .upload-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn.small { width: auto; padding: 0.55rem 1rem; font-size: 0.85rem; }
+  .btn.green { background: #8db63a; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .post-btn { margin-top: 1.2rem; }
 
-  .status {
-    text-align: center;
-    font-size: 0.85rem;
-    min-height: 1.5rem;
-    margin-top: 0.5rem;
-    max-width: 420px;
-  }
+  .status { text-align: center; font-size: 0.9rem; min-height: 1.5rem; margin-top: 0.8rem; line-height: 1.4; }
   .status.success { color: #8db63a; }
   .status.error { color: #e68e2c; }
 
-  .hidden { display: none; }
+  /* edit list */
+  .edit-list { display: flex; flex-direction: column; gap: 0.7rem; }
+  .edit-head { display: flex; gap: 0.8rem; align-items: center; padding: 0.6rem; cursor: pointer; }
+  .edit-head img { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; flex-shrink: 0; background: rgba(255,255,255,0.05); }
+  .edit-head .t { font-weight: 700; font-size: 0.9rem; }
+  .edit-head .d { font-size: 0.72rem; opacity: 0.5; }
+  .edit-body { padding: 0 1rem 1rem; display: flex; flex-direction: column; gap: 0.7rem; }
+  .row-msg { font-size: 0.8rem; min-height: 1rem; }
+  .row-msg.ok { color: #8db63a; }
+  .row-msg.err { color: #e68e2c; }
 
-  .gate {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-    margin-top: 3rem;
-  }
-  .gate input {
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 10px;
-    padding: 0.9rem 1.2rem;
-    color: #fdfcf5;
-    font-family: 'Nunito', sans-serif;
-    font-size: 1rem;
-    outline: none;
-    text-align: center;
-    width: 200px;
-    letter-spacing: 0.05em;
-  }
-  .gate input::placeholder { color: rgba(255,255,255,0.25); }
-  .gate input:focus { border-color: #8db63a; }
-  .gate .hint {
-    font-size: 0.75rem;
-    opacity: 0.3;
-  }
-  .gate .wrong {
-    color: #e68e2c;
-    font-size: 0.8rem;
-    min-height: 1.2rem;
-  }
+  .footer { margin-top: 2.5rem; font-size: 0.78rem; opacity: 0.6; text-align: center; line-height: 1.6; }
 </style>
 </head>
 <body>
 
 <h1>Moore Gardens<span>!</span> Upload</h1>
 
-<!-- Gate -->
-<div class="gate" id="gate">
+<!-- Password gate: checked by the server, not in this page -->
+<form class="gate" id="gate">
   <div class="hint">password</div>
-  <input type="password" id="pinInput" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" autofocus>
-  <div class="wrong" id="wrongMsg"></div>
-</div>
+  <input type="password" id="pwInput" autocomplete="current-password" autofocus>
+  <button class="btn" type="submit" id="unlockBtn">unlock</button>
+  <div class="msg" id="gateMsg"></div>
+</form>
 
-<!-- Upload (hidden until authenticated) -->
-<div id="uploadArea" class="hidden">
+<div class="wrap hidden" id="app">
+  <div class="tabs">
+    <button class="active" data-tab="post">Post photos</button>
+    <button data-tab="edit">Edit photos</button>
+  </div>
 
-<div class="pick-btn" id="pickBtn">
-  <input type="file" accept="image/*" multiple id="photoInput">
-  tap to choose photos
-</div>
+  <!-- POST -->
+  <section id="tab-post">
+    <div class="pick-btn">
+      <input type="file" accept="image/*" multiple id="photoInput">
+      tap to choose photos
+    </div>
+    <div class="cards" id="cards"></div>
+    <button class="btn post-btn hidden" id="postBtn" disabled>post</button>
+    <div class="status" id="status"></div>
+  </section>
 
-<div class="cards" id="cards"></div>
+  <!-- EDIT -->
+  <section id="tab-edit" class="hidden">
+    <div class="status" id="editStatus">loading…</div>
+    <div class="edit-list" id="editList"></div>
+    <button class="btn green small hidden" id="moreBtn" style="margin:1rem auto 0;display:block">show more</button>
+  </section>
 
-<button class="upload-btn hidden" id="uploadBtn" disabled>upload all</button>
-<div class="status" id="status"></div>
-
+  <div class="footer">
+    On iPhone? <a href="/shortcut/" id="shortcutLink">Add the “Post to Moore Gardens” share-sheet shortcut</a>.<br>
+    New photos take about a minute to appear on the site.<br>
+    <button class="link-btn" id="lockBtn">lock this device</button>
+  </div>
 </div>
 
 <script>
-  // Gate
-  document.getElementById('pinInput').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      if (e.target.value === 'sweet') {
-        document.getElementById('gate').classList.add('hidden');
-        document.getElementById('uploadArea').classList.remove('hidden');
-      } else {
-        document.getElementById('wrongMsg').textContent = 'nope';
-        e.target.value = '';
+  const REPO_RAW = 'https://raw.githubusercontent.com/Bubbadub456/moore-gardens/main/';
+  const BASE_TAGS = ['seedlings','propagation','setup','harvest','pollinators','garden life','bloom','soil'];
+  const MAX_EDGE = 2000; // resize in the browser before sending (keeps uploads small)
+  const PW_KEY = 'mg-upload-pw';
+
+  let password = '';
+  let tagOptions = [...BASE_TAGS];
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  function store(key, value) {
+    try { value == null ? localStorage.removeItem(key) : localStorage.setItem(key, value); } catch (e) {}
+  }
+  function recall(key) {
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+  }
+
+  // ---------- API ----------
+  async function api(path, { method = 'GET', body } = {}) {
+    let res;
+    try {
+      res = await fetch(path, {
+        method,
+        headers: {
+          Authorization: `Bearer ${password}`,
+          ...(body ? { 'Content-Type': 'application/json' } : {}),
+        },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+    } catch (e) {
+      if (e instanceof TypeError && /header/i.test(e.message)) {
+        throw new Error('The password can only use plain letters, numbers and punctuation.');
       }
+      throw new Error('Could not reach the server. Check your connection.');
     }
+    const raw = await res.text();
+    let data = null;
+    try { data = JSON.parse(raw); } catch (e) {}
+    if (!res.ok || !data || data.ok === false) {
+      if (res.status === 413) throw new Error('That photo is too big to send. Try a smaller one.');
+      throw new Error(data?.message || `Server error ${res.status}`);
+    }
+    return data;
+  }
+
+  // ---------- gate ----------
+  async function unlock(pw, { silent = false } = {}) {
+    password = pw;
+    $('gateMsg').textContent = silent ? '' : 'checking…';
+    try {
+      const s = await api('/api/status');
+      if (!s.ready) {
+        $('gateMsg').textContent = 'The upload server is not set up yet. The password and GitHub token need adding in Vercel.';
+        return;
+      }
+      if (!s.authorized) {
+        $('gateMsg').textContent = silent ? '' : 'nope';
+        store(PW_KEY, null);
+        $('pwInput').value = '';
+        return;
+      }
+      store(PW_KEY, pw);
+      $('gate').classList.add('hidden');
+      $('app').classList.remove('hidden');
+      loadEditList();
+    } catch (e) {
+      $('gateMsg').textContent = e.message;
+    }
+  }
+
+  $('gate').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const pw = $('pwInput').value;
+    if (pw) unlock(pw);
   });
 
-  const TAG_OPTIONS = ['seedlings','propagation','setup','harvest','pollinators','garden life','bloom','soil'];
+  $('lockBtn').addEventListener('click', () => {
+    store(PW_KEY, null);
+    location.reload();
+  });
 
-  const photoInput = document.getElementById('photoInput');
-  const cardsEl = document.getElementById('cards');
-  const uploadBtn = document.getElementById('uploadBtn');
-  const statusEl = document.getElementById('status');
-
-  let photoCards = [];
-
-  photoInput.addEventListener('change', (e) => {
-    const files = Array.from(e.target.files);
-    if (!files.length) return;
-
-    files.forEach(file => {
-      const id = Date.now() + '-' + Math.random().toString(36).slice(2, 6);
-      const card = { id, file, tags: [] };
-      photoCards.push(card);
-      renderCard(card);
+  // ---------- tabs ----------
+  document.querySelectorAll('.tabs button').forEach((b) => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('active', x === b));
+      $('tab-post').classList.toggle('hidden', b.dataset.tab !== 'post');
+      $('tab-edit').classList.toggle('hidden', b.dataset.tab !== 'edit');
+      if (b.dataset.tab === 'edit') loadEditList();
     });
-
-    uploadBtn.classList.remove('hidden');
-    checkAllReady();
   });
 
-  function renderCard(card) {
+  // ---------- shared field markup ----------
+  function tagChips(selected) {
+    const all = [...new Set([...tagOptions, ...selected])];
+    return all.map((t) =>
+      `<button type="button" class="tag-chip${selected.includes(t) ? ' selected' : ''}" data-tag="${esc(t)}">${esc(t)}</button>`
+    ).join('');
+  }
+
+  function fieldsHtml(p) {
+    return `
+      <div class="field-label">title</div>
+      <input type="text" data-field="title" maxlength="120" placeholder="what are we looking at?" value="${esc(p.title)}">
+      <div class="field-label">tags</div>
+      <div class="tags-wrap">${tagChips(p.tags || [])}</div>
+      <div class="field-label">plant</div>
+      <input type="text" data-field="plant" maxlength="120" placeholder="e.g. Wild Bergamot" value="${esc(p.plant)}">
+      <div class="field-label">note</div>
+      <textarea data-field="note" maxlength="1000" placeholder="anything to note?">${esc(p.note)}</textarea>`;
+  }
+
+  function readFields(el) {
+    return {
+      title: el.querySelector('[data-field="title"]').value.trim(),
+      plant: el.querySelector('[data-field="plant"]').value.trim(),
+      note: el.querySelector('[data-field="note"]').value.trim(),
+      tags: [...el.querySelectorAll('.tag-chip.selected')].map((c) => c.dataset.tag),
+    };
+  }
+
+  document.addEventListener('click', (e) => {
+    const chip = e.target.closest('.tag-chip');
+    if (chip) chip.classList.toggle('selected');
+  });
+
+  // ---------- post ----------
+  let cards = []; // { id, file, el, staged }
+  let busy = false;
+
+  $('photoInput').addEventListener('change', (e) => {
+    for (const file of e.target.files) addCard(file);
+    e.target.value = '';
+    refreshPostBtn();
+  });
+
+  function addCard(file) {
+    const card = { id: Math.random().toString(36).slice(2), file, staged: null };
     const el = document.createElement('div');
     el.className = 'photo-card';
-    el.id = `card-${card.id}`;
-
-    const tagsHtml = TAG_OPTIONS.map(t =>
-      `<div class="tag-chip" data-tag="${t}" data-card="${card.id}">${t}</div>`
-    ).join('');
-
     el.innerHTML = `
-      <img src="${URL.createObjectURL(card.file)}" alt="">
+      <img alt="">
       <div class="card-fields">
-        <div class="field-label">title</div>
-        <input type="text" placeholder="what are we looking at?" data-field="title" data-card="${card.id}">
-        <div class="field-label">tags</div>
-        <div class="tags-wrap">${tagsHtml}</div>
-        <div class="field-label">plant</div>
-        <input type="text" placeholder="e.g. Wild Bergamot" data-field="plant" data-card="${card.id}">
-        <div class="field-label">thought</div>
-        <textarea placeholder="anything to note?" data-field="thought" data-card="${card.id}"></textarea>
-        <button class="remove-btn" data-card="${card.id}">remove</button>
+        ${fieldsHtml({ tags: [] })}
+        <div class="card-error hidden"></div>
+        <div class="row-actions"><span></span><button type="button" class="link-btn" data-remove>remove</button></div>
       </div>`;
-    cardsEl.appendChild(el);
-  }
-
-  // Tag toggle
-  cardsEl.addEventListener('click', (e) => {
-    const chip = e.target.closest('.tag-chip');
-    if (chip) {
-      chip.classList.toggle('selected');
-      const cardId = chip.dataset.card;
-      const tag = chip.dataset.tag;
-      const card = photoCards.find(c => c.id === cardId);
-      if (card) {
-        if (card.tags.includes(tag)) card.tags = card.tags.filter(t => t !== tag);
-        else card.tags.push(tag);
-      }
-      return;
-    }
-
-    const removeBtn = e.target.closest('.remove-btn');
-    if (removeBtn) {
-      const cardId = removeBtn.dataset.card;
-      photoCards = photoCards.filter(c => c.id !== cardId);
-      document.getElementById(`card-${cardId}`).remove();
-      if (!photoCards.length) uploadBtn.classList.add('hidden');
-      checkAllReady();
-    }
-  });
-
-  // Check titles
-  cardsEl.addEventListener('input', checkAllReady);
-  function checkAllReady() {
-    if (!photoCards.length) { uploadBtn.disabled = true; return; }
-    const allTitled = photoCards.every(card => {
-      const input = document.querySelector(`input[data-field="title"][data-card="${card.id}"]`);
-      return input && input.value.trim();
+    const img = el.querySelector('img');
+    img.src = URL.createObjectURL(file);
+    img.onerror = () => showCardError(card, 'This browser can’t open this photo (maybe HEIC). Try Safari, or save it as JPEG.');
+    el.querySelector('[data-remove]').addEventListener('click', () => {
+      cards = cards.filter((c) => c !== card);
+      el.remove();
+      refreshPostBtn();
     });
-    uploadBtn.disabled = !allTitled;
+    el.addEventListener('input', refreshPostBtn);
+    card.el = el;
+    cards.push(card);
+    $('cards').appendChild(el);
   }
 
-  function resizeImage(file, maxWidth) {
-    return new Promise((resolve) => {
+  function showCardError(card, msg) {
+    const box = card.el.querySelector('.card-error');
+    box.textContent = msg;
+    box.classList.toggle('hidden', !msg);
+    card.el.classList.toggle('failed', Boolean(msg));
+  }
+
+  function refreshPostBtn() {
+    const btn = $('postBtn');
+    btn.classList.toggle('hidden', cards.length === 0);
+    const allTitled = cards.length > 0 && cards.every((c) => readFields(c.el).title);
+    btn.disabled = busy || !allTitled;
+    btn.textContent = cards.length === 1 ? 'post 1 photo' : `post ${cards.length} photos`;
+    if (cards.length && !allTitled) btn.textContent += ' (add titles first)';
+  }
+
+  function resizeImage(file) {
+    return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
-        const scale = Math.min(1, maxWidth / img.width);
+        const scale = Math.min(1, MAX_EDGE / Math.max(img.width, img.height));
         const canvas = document.createElement('canvas');
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
         canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob(resolve, 'image/jpeg', 0.75);
+        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not process this photo.'))), 'image/jpeg', 0.88);
       };
+      img.onerror = () => reject(new Error('This browser can’t open this photo (maybe HEIC). Try Safari, or save it as JPEG.'));
       img.src = URL.createObjectURL(file);
     });
   }
@@ -323,77 +395,183 @@
   function blobToBase64(blob) {
     return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onload = () => resolve(String(reader.result).split(',')[1]);
       reader.readAsDataURL(blob);
     });
   }
 
-  uploadBtn.addEventListener('click', async () => {
-    if (!photoCards.length) return;
-    uploadBtn.disabled = true;
-    statusEl.className = 'status';
-    const total = photoCards.length;
-    let succeeded = 0;
-    const failed = [];
+  $('postBtn').addEventListener('click', async () => {
+    if (busy) return;
+    busy = true;
+    try { await postAll(); } finally { busy = false; refreshPostBtn(); }
+  });
 
-    for (let i = 0; i < total; i++) {
-      const card = photoCards[i];
-      const title = document.querySelector(`input[data-field="title"][data-card="${card.id}"]`).value.trim();
-      const plant = document.querySelector(`input[data-field="plant"][data-card="${card.id}"]`).value.trim() || null;
-      const thought = document.querySelector(`textarea[data-field="thought"][data-card="${card.id}"]`).value.trim() || null;
+  async function postAll() {
+    const status = $('status');
+    $('postBtn').disabled = true;
+    status.className = 'status';
+    const batch = [...cards];
 
+    // 1. Send each photo. Ones already sent on an earlier try are skipped.
+    for (let i = 0; i < batch.length; i++) {
+      const card = batch[i];
+      if (card.staged) continue;
+      const label = batch.length === 1 ? '' : ` ${i + 1} of ${batch.length}`;
+      showCardError(card, '');
       try {
-        statusEl.textContent = total === 1 ? 'resizing...' : `resizing ${i + 1} of ${total}...`;
-        const resized = await resizeImage(card.file, 1200);
-
-        statusEl.textContent = total === 1 ? 'uploading...' : `uploading ${i + 1} of ${total}...`;
-        const base64 = await blobToBase64(resized);
-        const fileName = `${Date.now()}-${i}.jpg`;
-
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fileName,
-            fileBase64: base64,
-            contentType: 'image/jpeg',
-            title,
-            tags: card.tags,
-            plant,
-            thought,
-          }),
-        });
-
-        if (!res.ok) {
-          const raw = await res.text().catch(() => '');
-          let msg;
-          try { msg = JSON.parse(raw).error; } catch(e) {}
-          throw new Error(msg || `${res.status}: ${raw.slice(0, 120)}`);
-        }
-        succeeded++;
-      } catch (err) {
-        failed.push(`"${title}" — ${err.message}`);
+        status.textContent = `preparing${label}…`;
+        const image = await blobToBase64(await resizeImage(card.file));
+        status.textContent = `sending${label}…`;
+        const { staged } = await api('/api/photo', { method: 'POST', body: { image, ...readFields(card.el) } });
+        card.staged = staged;
+      } catch (e) {
+        showCardError(card, e.message);
       }
     }
 
-    if (failed.length === 0) {
-      statusEl.textContent = total === 1 ? 'live on mooregardens.farm!' : `${total} photos live on mooregardens.farm!`;
-      statusEl.className = 'status success';
-      photoCards = [];
-      cardsEl.innerHTML = '';
-      photoInput.value = '';
-      uploadBtn.classList.add('hidden');
-      uploadBtn.disabled = true;
-    } else if (succeeded > 0) {
-      statusEl.textContent = `${succeeded} uploaded, ${failed.length} failed: ${failed.join('; ')}`;
-      statusEl.className = 'status error';
-      uploadBtn.disabled = false;
-    } else {
-      statusEl.textContent = `upload failed: ${failed.join('; ')}`;
-      statusEl.className = 'status error';
-      uploadBtn.disabled = false;
+    const ready = batch.filter((c) => c.staged);
+    const failed = batch.filter((c) => !c.staged);
+    if (!ready.length) {
+      status.textContent = 'Nothing was posted. See the message on each photo.';
+      status.className = 'status error';
+      return;
     }
-  });
+
+    // 2. Put them all on the site in one go. Edits made after sending still count.
+    try {
+      status.textContent = 'saving…';
+      const staged = ready.map((c) => ({ ...c.staged, entry: { ...c.staged.entry, ...readFields(c.el) } }));
+      const result = await api('/api/publish', { method: 'POST', body: { staged } });
+      for (const c of ready) c.el.remove();
+      cards = cards.filter((c) => !c.staged);
+      status.className = failed.length ? 'status error' : 'status success';
+      status.textContent = failed.length
+        ? `${ready.length} saved; ${failed.length} need another try (see below).`
+        : `${result.message}`;
+      if (!failed.length) waitUntilLive(result.ids);
+    } catch (e) {
+      status.textContent = `Couldn’t save: ${e.message}. Tap post to try again.`;
+      status.className = 'status error';
+    }
+  }
+
+  // Checks the published photos.json until the new photos show up.
+  async function waitUntilLive(ids) {
+    const status = $('status');
+    const started = Date.now();
+    while (Date.now() - started < 4 * 60 * 1000) {
+      await new Promise((r) => setTimeout(r, 6000));
+      try {
+        const res = await fetch(`/photos.json?t=${Date.now()}`, { cache: 'no-store' });
+        const live = new Set((await res.json()).map((p) => p.id));
+        if (ids.every((id) => live.has(id))) {
+          status.innerHTML = ids.length === 1
+            ? 'Live on <a href="/#gallery">mooregardens.farm</a>!'
+            : `${ids.length} photos live on <a href="/#gallery">mooregardens.farm</a>!`;
+          status.className = 'status success';
+          return;
+        }
+        status.textContent = 'Saved. The site is updating…';
+      } catch (e) {}
+    }
+    status.textContent = 'Saved. The site is taking longer than usual to update; check back in a few minutes.';
+  }
+
+  // ---------- edit ----------
+  let editPhotos = [];
+  let editShown = 0;
+
+  async function loadEditList() {
+    $('editStatus').textContent = 'loading…';
+    $('editStatus').className = 'status';
+    try {
+      const s = await api('/api/status?photos=1');
+      editPhotos = s.photos || [];
+      const seen = new Set(BASE_TAGS);
+      editPhotos.forEach((p) => (p.tags || []).forEach((t) => seen.add(t)));
+      tagOptions = [...seen];
+      $('editStatus').textContent = editPhotos.length ? '' : 'No photos yet.';
+      $('editList').innerHTML = '';
+      editShown = 0;
+      showMore();
+    } catch (e) {
+      $('editStatus').textContent = e.message;
+      $('editStatus').className = 'status error';
+    }
+  }
+
+  function showMore() {
+    const next = editPhotos.slice(editShown, editShown + 25);
+    next.forEach((p) => $('editList').appendChild(editRow(p)));
+    editShown += next.length;
+    $('moreBtn').classList.toggle('hidden', editShown >= editPhotos.length);
+  }
+  $('moreBtn').addEventListener('click', showMore);
+
+  function niceDate(iso) {
+    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function editRow(p) {
+    const el = document.createElement('div');
+    el.className = 'edit-row';
+    el.innerHTML = `
+      <div class="edit-head">
+        <img alt="" loading="lazy">
+        <div><div class="t"></div><div class="d"></div></div>
+      </div>
+      <div class="edit-body hidden">
+        ${fieldsHtml(p)}
+        <div class="row-msg"></div>
+        <div class="row-actions">
+          <button type="button" class="link-btn danger" data-delete>delete photo</button>
+          <button type="button" class="btn green small" data-save>save</button>
+        </div>
+      </div>`;
+    const img = el.querySelector('img');
+    img.src = '/' + p.thumb;
+    img.onerror = () => { img.onerror = null; img.src = REPO_RAW + p.thumb; }; // not deployed yet
+    el.querySelector('.t').textContent = p.title;
+    el.querySelector('.d').textContent = niceDate(p.date) + (p.plant ? ' · ' + p.plant : '');
+
+    el.querySelector('.edit-head').addEventListener('click', () => el.querySelector('.edit-body').classList.toggle('hidden'));
+    const msg = el.querySelector('.row-msg');
+
+    el.querySelector('[data-save]').addEventListener('click', async (e) => {
+      const fields = readFields(el);
+      if (!fields.title) { msg.textContent = 'Add a title.'; msg.className = 'row-msg err'; return; }
+      e.target.disabled = true;
+      msg.textContent = 'saving…'; msg.className = 'row-msg';
+      try {
+        const r = await api('/api/edit', { method: 'POST', body: { id: p.id, ...fields } });
+        Object.assign(p, fields);
+        el.querySelector('.t').textContent = p.title;
+        msg.textContent = r.message; msg.className = 'row-msg ok';
+      } catch (err) {
+        msg.textContent = err.message; msg.className = 'row-msg err';
+      }
+      e.target.disabled = false;
+    });
+
+    el.querySelector('[data-delete]').addEventListener('click', async (e) => {
+      if (!confirm(`Delete “${p.title}” from the site?`)) return;
+      e.target.disabled = true;
+      msg.textContent = 'deleting…'; msg.className = 'row-msg';
+      try {
+        await api('/api/edit', { method: 'POST', body: { id: p.id, remove: true } });
+        editPhotos = editPhotos.filter((x) => x !== p);
+        el.remove();
+      } catch (err) {
+        msg.textContent = err.message; msg.className = 'row-msg err';
+        e.target.disabled = false;
+      }
+    });
+    return el;
+  }
+
+  // ---------- start ----------
+  const saved = recall(PW_KEY);
+  if (saved) unlock(saved, { silent: true });
 </script>
 </body>
 </html>

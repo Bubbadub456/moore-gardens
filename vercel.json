@@ -1,7 +1,18 @@
 {
   "functions": {
-    "api/upload.js": {
-      "maxDuration": 30
+    "api/photo.js": { "maxDuration": 30 },
+    "api/publish.js": { "maxDuration": 30 },
+    "api/edit.js": { "maxDuration": 30 },
+    "api/status.js": { "maxDuration": 15 }
+  },
+  "headers": [
+    {
+      "source": "/photos/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    },
+    {
+      "source": "/photos.json",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
     }
-  }
+  ]
 }

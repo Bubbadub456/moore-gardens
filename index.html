@@ -357,27 +357,30 @@
     z-index: 200;
     justify-content: center;
     align-items: center;
+    flex-direction: column;
     cursor: pointer;
     backdrop-filter: blur(12px);
   }
   .lightbox.active { display: flex; }
   .lightbox img {
     max-width: 90vw;
-    max-height: 85vh;
+    max-height: 75vh;
     object-fit: contain;
     border-radius: 16px;
   }
   .lightbox-caption {
-    position: fixed;
-    bottom: 2rem;
-    left: 50%;
-    transform: translateX(-50%);
+    width: min(90vw, 640px);
+    margin-top: 1rem;
+    text-align: center;
     color: white;
     font-size: 0.82rem;
-    font-weight: 400;
-    opacity: 0.6;
-    white-space: nowrap;
+    line-height: 1.45;
+    cursor: default;
   }
+  .lightbox-caption .cap-main { font-weight: 700; opacity: 0.85; }
+  .lightbox-caption .cap-plant { font-style: italic; opacity: 0.75; }
+  .lightbox-caption .cap-note { opacity: 0.65; margin-top: 0.2rem; white-space: pre-line; }
+  .lightbox-caption .cap-tags { opacity: 0.5; font-size: 0.72rem; margin-top: 0.3rem; }
   .lightbox-close {
     position: fixed;
     top: 1.5rem;
@@ -584,8 +587,8 @@
 <!-- Lightbox -->
 <div class="lightbox" id="lightbox">
   <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
-  <span class="lightbox-nav prev" onclick="navigateLightbox(-1)">&#8592;</span>
-  <span class="lightbox-nav next" onclick="navigateLightbox(1)">&#8594;</span>
+  <span class="lightbox-nav prev" onclick="navigateLightbox(-1, event)">&#8592;</span>
+  <span class="lightbox-nav next" onclick="navigateLightbox(1, event)">&#8594;</span>
   <img id="lightboxImg" src="" alt="">
   <div class="lightbox-caption" id="lightboxCaption"></div>
 </div>
@@ -597,10 +600,7 @@
     nav.classList.toggle('scrolled', window.scrollY > 80);
   });
 
-  // Gallery — live from Supabase
-  const SUPABASE_URL = 'https://wcrcccrgaiesafmmzqgx.supabase.co';
-  const SUPABASE_ANON_KEY = 'sb_publishable_7VBS6pxkgXctHtTuR22b0g_W7Qw3Wyb';
-  
+  // Gallery — photos.json is updated by the upload page (/upload.html → api/)
   // Placeholder for when gallery is empty
   const placeholderData = [
     { title: "Seed trays getting started", date: "March 2026", hue: 95 },
@@ -618,79 +618,85 @@
     return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect fill="hsl(${hue},28%,${l}%)" width="${w}" height="${h}"/><circle cx="${w/2}" cy="${h*.38}" r="${w*.1}" fill="hsl(${hue},20%,${l+12}%)" opacity=".4"/><text x="${w/2}" y="${h*.58}" text-anchor="middle" fill="hsl(${hue},15%,${l+25}%)" font-family="sans-serif" font-size="12" opacity=".45">your photo here</text></svg>`)}`;
   }
 
+  const INITIAL_COUNT = 20;
+  let allPhotos = [];
   let galleryPhotos = [];
-  let allLoaded = false;
   const grid = document.getElementById('galleryGrid');
   const seeAllWrap = document.getElementById('seeAllWrap');
   const seeAllBtn = document.getElementById('seeAllBtn');
+
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text != null) node.textContent = text; // textContent, never innerHTML, for anything typed in
+    return node;
+  }
+
+  function monthYear(iso) {
+    return new Date(iso).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }
 
   function renderGallery(photos) {
     galleryPhotos = photos;
     grid.innerHTML = '';
     photos.forEach((item, i) => {
-      const card = document.createElement('div');
-      card.className = 'gallery-card';
-      card.innerHTML = `
-        <img src="${item.photo_url}" alt="${item.title}" loading="lazy">
-        <div class="card-overlay">
-          <div class="card-title">${item.title}</div>
-          <div class="card-date">${item.date}</div>
-        </div>`;
+      const card = el('div', 'gallery-card');
+      const img = el('img');
+      img.src = item.thumb;
+      img.alt = item.title;
+      img.loading = 'lazy';
+      const overlay = el('div', 'card-overlay');
+      overlay.append(el('div', 'card-title', item.title), el('div', 'card-date', item.dateLabel));
+      card.append(img, overlay);
       card.onclick = () => openLightbox(i);
       grid.appendChild(card);
     });
   }
 
   function renderPlaceholders() {
-    galleryPhotos = placeholderData.map((item, i) => ({
-      ...item,
-      photo_url: createPlaceholderSVG(item.hue, i, 500, i===0?700:(i===4?300:400)),
+    renderGallery(placeholderData.map((item, i) => {
+      const url = createPlaceholderSVG(item.hue, i, 500, i===0?700:(i===4?300:400));
+      return { title: item.title, dateLabel: item.date, thumb: url, src: url };
     }));
-    renderGallery(galleryPhotos);
   }
 
-  async function loadGallery(showAll) {
+  async function loadGallery() {
     try {
-      let url = `${SUPABASE_URL}/rest/v1/gallery?select=*&order=created_at.desc`;
-      if (!showAll) url += '&limit=20';
-      const res = await fetch(url,
-        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } }
-      );
-      const photos = await res.json();
-      if (photos.length > 0) {
-        renderGallery(photos.map(p => ({
-          title: p.title,
-          date: new Date(p.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-          photo_url: p.photo_url,
-        })));
-        // Show "See All" only on initial load when we hit the limit
-        if (!showAll && photos.length >= 20) {
-          seeAllWrap.style.display = '';
-        } else {
-          seeAllWrap.style.display = 'none';
-          allLoaded = true;
-        }
-      } else {
-        renderPlaceholders();
-      }
+      const res = await fetch('/photos.json', { cache: 'no-cache' });
+      if (!res.ok) throw new Error(`photos.json ${res.status}`);
+      const photos = (await res.json()).map((p) => ({ ...p, dateLabel: monthYear(p.date) }));
+      if (!photos.length) return renderPlaceholders();
+      allPhotos = photos;
+      renderGallery(photos.slice(0, INITIAL_COUNT));
+      seeAllWrap.style.display = photos.length > INITIAL_COUNT ? '' : 'none';
     } catch (e) {
       renderPlaceholders();
     }
   }
 
-  loadGallery(false);
+  loadGallery();
 
   seeAllBtn.addEventListener('click', function() {
-    seeAllBtn.textContent = 'Loading…';
-    loadGallery(true);
+    renderGallery(allPhotos);
+    seeAllWrap.style.display = 'none';
   });
 
   // Lightbox
   let currentIndex = 0;
+  function showLightboxPhoto(i) {
+    const p = galleryPhotos[i];
+    const img = document.getElementById('lightboxImg');
+    img.src = p.src;
+    img.alt = p.title;
+    const cap = document.getElementById('lightboxCaption');
+    cap.replaceChildren(el('div', 'cap-main', p.title + (p.dateLabel ? ' \u2014 ' + p.dateLabel : '')));
+    if (p.plant) cap.append(el('div', 'cap-plant', p.plant));
+    if (p.note) cap.append(el('div', 'cap-note', p.note));
+    if (p.tags && p.tags.length) cap.append(el('div', 'cap-tags', p.tags.join(' \u00b7 ')));
+  }
   function openLightbox(i) {
     currentIndex = i;
-    document.getElementById('lightboxImg').src = galleryPhotos[i].photo_url;
-    document.getElementById('lightboxCaption').textContent = galleryPhotos[i].title + ' \u2014 ' + galleryPhotos[i].date;
+    showLightboxPhoto(i);
     document.getElementById('lightbox').classList.add('active');
     document.body.style.overflow = 'hidden';
   }
@@ -698,11 +704,10 @@
     document.getElementById('lightbox').classList.remove('active');
     document.body.style.overflow = '';
   }
-  function navigateLightbox(dir) {
+  function navigateLightbox(dir, e) {
     currentIndex = (currentIndex + dir + galleryPhotos.length) % galleryPhotos.length;
-    document.getElementById('lightboxImg').src = galleryPhotos[currentIndex].photo_url;
-    document.getElementById('lightboxCaption').textContent = galleryPhotos[currentIndex].title + ' \u2014 ' + galleryPhotos[currentIndex].date;
-    event.stopPropagation();
+    showLightboxPhoto(currentIndex);
+    if (e) e.stopPropagation();
   }
   document.getElementById('lightbox').addEventListener('click', function(e) { if (e.target === this) closeLightbox(); });
   document.addEventListener('keydown', function(e) {
