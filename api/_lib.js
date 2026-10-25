@@ -172,11 +172,29 @@ export async function processImage(buf) {
 
 // ---------- GitHub ----------
 
+// Forgive common paste mistakes in the Vercel setting: spaces, quote marks, a leading "Bearer".
+function githubToken() {
+  const unquote = (s) => s.trim().replace(/^["']+|["']+$/g, '').trim();
+  return unquote(unquote(String(process.env.GITHUB_TOKEN || '')).replace(/^bearer\s+/i, ''));
+}
+
+// Explains a rejected token without revealing it (only shown after the password check).
+function tokenProblem() {
+  const t = githubToken();
+  if (/^github_pat_/.test(t) && t.length < 80) {
+    return `The saved token looks cut off (${t.length} characters; these are usually 93). Copy it again in full.`;
+  }
+  if (/^(github_pat_|gh[pousr]_)/.test(t)) {
+    return 'The saved token looks complete, so it has probably expired or been deleted. Make a new one.';
+  }
+  return 'The saved value does not look like a GitHub token (those start with "github_pat_"). Paste the token itself.';
+}
+
 async function gh(path, { method = 'GET', body, raw = false } = {}) {
   const res = await fetch(`https://api.github.com/repos/${REPO}${path}`, {
     method,
     headers: {
-      Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+      Authorization: `Bearer ${githubToken()}`,
       Accept: raw ? 'application/vnd.github.raw+json' : 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
       'User-Agent': 'moore-gardens-uploader',
@@ -188,9 +206,11 @@ async function gh(path, { method = 'GET', body, raw = false } = {}) {
     const text = await res.text().catch(() => '');
     let detail = text.slice(0, 200);
     try { detail = JSON.parse(text).message || detail; } catch {}
-    const hint = res.status === 401 ? ' (the GitHub token may have expired)' : '';
+    const message = res.status === 401
+      ? `GitHub rejected the token saved in Vercel. ${tokenProblem()} Then redeploy the site.`
+      : `GitHub said: ${detail}`;
     // Always 502 to the browser, so a GitHub auth problem never looks like a wrong password.
-    const err = new HttpError(502, `GitHub said: ${detail}${hint}`);
+    const err = new HttpError(502, message);
     err.githubStatus = res.status;
     throw err;
   }
