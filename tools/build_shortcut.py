@@ -4,10 +4,11 @@
     python3 tools/build_shortcut.py && shortcuts sign --mode anyone \
         --input /tmp/unsigned.shortcut --output "shortcut/Post to Moore Gardens.shortcut"
 
-What the shortcut does, for each photo shared to it (or picked, if run on its own):
-resize to 2000px, convert to JPEG without metadata, ask for a title / tags /
-plant, and POST it to /api/photo?publish=1. The upload password is asked once,
-when the shortcut is added, so it is never stored in this public file.
+What the shortcut does: asks once for tags and plant (used for every photo in
+the share), then for each photo shared to it (or picked, if run on its own):
+resize to 2000px, convert to JPEG without metadata, ask for a title, and POST
+it to /api/photo?publish=1. The upload password is asked once, when the
+shortcut is added, so it is never stored in this public file.
 """
 import plistlib
 import sys
@@ -89,6 +90,13 @@ def build():
 
         action("is.workflow.actions.count", UUID=cnt, WFCountType="Items", Input=attach(var("Photos"))),
 
+        # Tags and plant are asked once and used for every photo in this share
+        action("is.workflow.actions.ask", UUID=tags, WFInputType="Text",
+               WFAskActionPrompt=text("Tags? Optional, separated by commas (e.g. bloom, pollinators). "
+                                      "Used for all ", out(cnt, "Count"), " photo(s).")),
+        action("is.workflow.actions.ask", UUID=plant, WFInputType="Text",
+               WFAskActionPrompt=text("Plant name? Optional. Used for all ", out(cnt, "Count"), " photo(s).")),
+
         action("is.workflow.actions.repeat.each", GroupingIdentifier=repeat_group,
                WFControlFlowMode=0, WFInput=attach(var("Photos"))),
 
@@ -101,10 +109,6 @@ def build():
 
         action("is.workflow.actions.ask", UUID=title, WFInputType="Text",
                WFAskActionPrompt=text("Title for photo ", var("Repeat Index"), " of ", out(cnt, "Count"), "?")),
-        action("is.workflow.actions.ask", UUID=tags, WFInputType="Text",
-               WFAskActionPrompt=text("Tags? Optional, separated by commas (e.g. bloom, pollinators)")),
-        action("is.workflow.actions.ask", UUID=plant, WFInputType="Text",
-               WFAskActionPrompt=text("Plant name? Optional")),
 
         action("is.workflow.actions.downloadurl", UUID=resp,
                WFURL=API_URL, WFHTTPMethod="POST", WFHTTPBodyType="JSON",

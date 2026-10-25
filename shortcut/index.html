@@ -47,10 +47,18 @@
   <ol>
     <li>In Photos, select one or more photos and tap <b>Share</b>.</li>
     <li>Scroll down and tap <b>Post to Moore Gardens</b>.</li>
-    <li>Type a title for each photo. Tags and plant name are optional; leave them blank to skip.</li>
+    <li>It asks once for tags and a plant name, used for every photo you shared. Both are optional; leave them blank to skip.</li>
+    <li>Then type a title for each photo. They come in the order you selected them.</li>
     <li>You’ll get a notification when each one is saved. It shows on the site about a minute later.</li>
   </ol>
   <p class="note">To keep it near the top of the share sheet: Share → Edit Actions → tap the + next to Post to Moore Gardens.</p>
+  <p class="note">Need different tags or notes for each photo? Use <a href="/upload.html">the upload page</a>, or post here and fix them later under Edit photos.</p>
+
+  <h2>Updating the shortcut</h2>
+  <ol>
+    <li>Delete the old one first: in the Shortcuts app, press and hold it → Delete.</li>
+    <li>Then tap the button at the top to add the current version. It asks for the password again.</li>
+  </ol>
 
   <h2>Fixing problems</h2>
   <ol>
@@ -63,11 +71,12 @@
     <ol>
       <li>New shortcut. In its settings, turn on <b>Show in Share Sheet</b> and set it to receive <b>Images</b>; if there’s no input, <b>Ask For Photos</b>.</li>
       <li><b>Text</b>: your upload password. Then <b>Set Variable</b> <code>Password</code> to it.</li>
+      <li><b>Ask for Input</b> twice, before the repeat: Tags (optional) and Plant (optional). These go on every photo.</li>
       <li><b>Repeat with Each</b> item in Shortcut Input. Inside the repeat:</li>
       <li><b>Resize Image</b> (Repeat Item) by Longest Edge to <code>2000</code>.</li>
       <li><b>Convert Image</b> to JPEG, quality 85%, Preserve Metadata off.</li>
       <li><b>Base64 Encode</b> the converted image (Line Breaks: None).</li>
-      <li><b>Ask for Input</b> three times: Title, Tags (optional), Plant (optional).</li>
+      <li><b>Ask for Input</b>: Title.</li>
       <li><b>Get Contents of URL</b>: <code>https://www.mooregardens.farm/api/photo?publish=1</code>, Method POST, Header <code>Authorization</code> = <code>Bearer</code> + Password, Request Body JSON with text fields <code>image</code> (Base64 Encoded), <code>title</code>, <code>tags</code>, <code>plant</code>.</li>
       <li><b>Get Dictionary Value</b> <code>message</code> from the result, then <b>Show Notification</b> with it.</li>
     </ol>

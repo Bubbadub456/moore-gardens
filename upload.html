@@ -141,6 +141,20 @@
   .status.success { color: #8db63a; }
   .status.error { color: #e68e2c; }
 
+  /* same-for-all panel */
+  .batch {
+    background: rgba(141,182,58,0.1);
+    border: 1px dashed rgba(141,182,58,0.55);
+    border-radius: 16px;
+    padding: 1rem;
+    margin-bottom: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+  .batch-title { font-weight: 900; font-size: 0.95rem; }
+  .batch-hint { font-size: 0.75rem; opacity: 0.6; line-height: 1.4; }
+
   /* edit list */
   .edit-list { display: flex; flex-direction: column; gap: 0.7rem; }
   .edit-head { display: flex; gap: 0.8rem; align-items: center; padding: 0.6rem; cursor: pointer; }
@@ -178,6 +192,14 @@
     <div class="pick-btn">
       <input type="file" accept="image/*" multiple id="photoInput">
       tap to choose photos
+    </div>
+    <div class="batch hidden" id="batch">
+      <div class="batch-title" id="batchTitle">Same for all photos</div>
+      <div class="batch-hint">Tags and plant set here go on every photo below. You can still change any single photo.</div>
+      <div class="field-label">tags</div>
+      <div class="tags-wrap" id="batchTags"></div>
+      <div class="field-label">plant</div>
+      <input type="text" id="batchPlant" maxlength="120" placeholder="e.g. Wild Bergamot">
     </div>
     <div class="cards" id="cards"></div>
     <button class="btn post-btn hidden" id="postBtn" disabled>post</button>
@@ -322,7 +344,7 @@
 
   document.addEventListener('click', (e) => {
     const chip = e.target.closest('.tag-chip');
-    if (chip) chip.classList.toggle('selected');
+    if (chip && !chip.closest('#batch')) chip.classList.toggle('selected'); // batch chips handled below
   });
 
   // ---------- post ----------
@@ -342,7 +364,7 @@
     el.innerHTML = `
       <img alt="">
       <div class="card-fields">
-        ${fieldsHtml({ tags: [] })}
+        ${fieldsHtml({ tags: batchTags(), plant: $('batchPlant').value.trim() })}
         <div class="card-error hidden"></div>
         <div class="row-actions"><span></span><button type="button" class="link-btn" data-remove>remove</button></div>
       </div>`;
@@ -367,7 +389,56 @@
     card.el.classList.toggle('failed', Boolean(msg));
   }
 
+  // ---------- same for all photos ----------
+  // The panel shows once there are 2+ photos. Its tags and plant are copied onto
+  // every card as you change them, and onto photos added later.
+  function batchTags() {
+    return [...$('batchTags').querySelectorAll('.tag-chip.selected')].map((c) => c.dataset.tag);
+  }
+
+  function setCardTag(card, tag, on) {
+    const wrap = card.el.querySelector('.tags-wrap');
+    let chip = [...wrap.querySelectorAll('.tag-chip')].find((c) => c.dataset.tag === tag);
+    if (!chip && on) {
+      chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'tag-chip';
+      chip.dataset.tag = tag;
+      chip.textContent = tag;
+      wrap.appendChild(chip);
+    }
+    if (chip) chip.classList.toggle('selected', on);
+  }
+
+  $('batchTags').addEventListener('click', (e) => {
+    const chip = e.target.closest('.tag-chip');
+    if (!chip) return;
+    const on = chip.classList.toggle('selected');
+    cards.forEach((card) => setCardTag(card, chip.dataset.tag, on));
+  });
+
+  $('batchPlant').addEventListener('input', () => {
+    const plant = $('batchPlant').value;
+    cards.forEach((card) => { card.el.querySelector('[data-field="plant"]').value = plant; });
+  });
+
+  let batchCount = 0;
+  function refreshBatch() {
+    if (cards.length === batchCount) return; // only redraw when photos are added or removed
+    batchCount = cards.length;
+    if (!cards.length) {
+      $('batchPlant').value = ''; // start fresh for the next batch
+      $('batchTags').innerHTML = '';
+    }
+    const show = cards.length >= 2;
+    $('batch').classList.toggle('hidden', !show);
+    if (!show) return;
+    $('batchTitle').textContent = `Same for all ${cards.length} photos`;
+    $('batchTags').innerHTML = tagChips(batchTags()); // keeps choices, adds tags loaded since
+  }
+
   function refreshPostBtn() {
+    refreshBatch();
     const btn = $('postBtn');
     btn.classList.toggle('hidden', cards.length === 0);
     const allTitled = cards.length > 0 && cards.every((c) => readFields(c.el).title);
